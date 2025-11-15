@@ -1,23 +1,14 @@
-import {
-  axiosAdapter,
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosError,
-} from '@/adapters/AxiosAdapter';
-import { ErrorConfig, IRequestOptions } from '@/types';
-
-export interface RequestConfig<T = any> extends AxiosRequestConfig {
-  errorConfig?: ErrorConfig<T>;
-  requestInterceptors?: any[];
-  responseInterceptors?: any[];
-}
+import { axiosAdapter, AxiosInstance } from '@/adapters';
+import { IRequestOptions, RequestConfig } from '@/types';
 
 class RequestClient {
   constructor(options: RequestConfig) {
+    this.config = options;
     this.getRequestInstance(options);
   }
   static requestClient: RequestClient | null = null;
   private requestInstance: AxiosInstance | null = null;
+  private config: RequestConfig;
 
   static getRequestClient(options: RequestConfig) {
     if (RequestClient.requestClient) return RequestClient.requestClient;
@@ -58,7 +49,7 @@ class RequestClient {
     });
 
     // 当响应的数据 success 是 false 的时候，抛出 error 以供 errorHandler 处理。
-    this.requestInstance.interceptors.response.use((response) => {
+    this.requestInstance?.interceptors.response.use((response) => {
       const { data } = response;
       if (data?.success === false && config?.errorConfig?.errorThrower) {
         config.errorConfig.errorThrower(data);
@@ -71,8 +62,10 @@ class RequestClient {
 
   public request(url: string, opts?: IRequestOptions) {
     const requestInstance = this.requestInstance;
+
     if (!requestInstance) throw new Error('Request instance is not initialized');
-    const { getResponse = false, requestInterceptors, responseInterceptors } = opts;
+
+    const { getResponse = false, requestInterceptors, responseInterceptors } = opts || {};
 
     const requestInterceptorsToEject = requestInterceptors?.map((interceptor: any) => {
       if (Array.isArray(interceptor)) {
@@ -108,25 +101,25 @@ class RequestClient {
       requestInstance
         .request({ ...opts, url })
         .then((res) => {
-          requestInterceptorsToEject?.forEach((interceptor) => {
+          requestInterceptorsToEject?.forEach((interceptor: any) => {
             requestInstance.interceptors.request.eject(interceptor);
           });
-          responseInterceptorsToEject?.forEach((interceptor) => {
+          responseInterceptorsToEject?.forEach((interceptor: any) => {
             requestInstance.interceptors.response.eject(interceptor);
           });
           resolve(getResponse ? res : res.data);
         })
         .catch((error) => {
-          requestInterceptorsToEject?.forEach((interceptor) => {
+          requestInterceptorsToEject?.forEach((interceptor: any) => {
             requestInstance.interceptors.request.eject(interceptor);
           });
-          responseInterceptorsToEject?.forEach((interceptor) => {
+          responseInterceptorsToEject?.forEach((interceptor: any) => {
             requestInstance.interceptors.response.eject(interceptor);
           });
           try {
-            const handler = config?.errorConfig?.errorHandler;
+            const handler = this.config?.errorConfig?.errorHandler;
             if (handler) {
-              handler(error, opts);
+              handler(error, opts as IRequestOptions);
             }
           } catch (e) {
             reject(e);
