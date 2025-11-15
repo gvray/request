@@ -1,3 +1,4 @@
 export * from './types'
-export { createClient, UniRequestClient } from './client'
+export { UniRequestClient } from './client'
 export { request, getClient } from './request'
+export { errorConfig } from './requestErrorConfig'

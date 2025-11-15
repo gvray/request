@@ -1,5 +1,5 @@
-import { createClient } from './client'
-import { errorConfig } from './requestErrorConfig'
+import { createClient } from '../../src/client'
+import { errorConfig } from '../../src/requestErrorConfig'
 
 const client = createClient({
   adapter: 'fetch',

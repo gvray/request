@@ -1,87 +1,55 @@
-/*
- * Universal Request Types and Adapter Interfaces
- */
+import { AxiosRequestConfig, AxiosError, AxiosResponse } from '@/adapters/AxiosAdapter';
 
-export type HttpMethod =
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH'
-  | 'HEAD'
-  | 'OPTIONS';
-
-export type URLLike = string | URL;
-
-// Interceptor function that can either accept (config) or (url, config) and return possibly modified values
-export type RequestInterceptor =
-  | ((config: RequestOptions) => Promise<RequestOptions> | RequestOptions)
-  | ((
-      url: string,
-      config: RequestOptions,
-    ) => Promise<{ url: string; options: RequestOptions }> | { url: string; options: RequestOptions });
-
-export type ResponseInterceptor<T = any> = (
-  response: UnifiedResponse<T>,
-) => Promise<UnifiedResponse<T>> | UnifiedResponse<T>;
-
-export type InterceptorPair<T = any> = [
-  (arg: T) => Promise<T> | T,
-  (error: unknown) => unknown,
-];
+type RequestError = AxiosError | Error;
 
 export interface IErrorHandler {
-  (error: RequestError, opts: RequestOptions): void;
+  (error: RequestError, opts: IRequestOptions): void;
 }
+
+export interface IRequestOptions extends AxiosRequestConfig {
+  skipErrorHandler?: boolean;
+  requestInterceptors?: IRequestInterceptorTuple[];
+  responseInterceptors?: IResponseInterceptorTuple[];
+  [key: string]: any;
+}
+
+export interface IRequestOptionsWithResponse extends IRequestOptions {
+  getResponse: true;
+}
+
+export interface IRequestOptionsWithoutResponse extends IRequestOptions {
+  getResponse: false;
+}
+
+export interface IRequest {
+  <T = any>(url: string, opts: IRequestOptionsWithResponse): Promise<AxiosResponse<T>>;
+  <T = any>(url: string, opts: IRequestOptionsWithoutResponse): Promise<T>;
+  <T = any>(url: string, opts: IRequestOptions): Promise<T>; // getResponse 默认是 false， 因此不提供该参数时，只返回 data
+  <T = any>(url: string): Promise<T>; // 不提供 opts 时，默认使用 'GET' method，并且默认返回 data
+}
+type WithPromise<T> = T | Promise<T>;
+type IRequestInterceptorAxios = (config: IRequestOptions) => WithPromise<IRequestOptions>;
 
 export interface ErrorConfig<T = any> {
   errorHandler?: IErrorHandler;
   errorThrower?: (res: T) => void;
 }
+export type IErrorInterceptor = (error: Error) => Promise<Error>;
+export type IResponseInterceptor = <T = any>(
+  response: AxiosResponse<T>
+) => WithPromise<AxiosResponse<T>>;
+export type IRequestInterceptor = IRequestInterceptorAxios;
+export type IRequestInterceptorTuple =
+  | [IRequestInterceptor, IErrorInterceptor]
+  | [IRequestInterceptor]
+  | IRequestInterceptor;
+export type IResponseInterceptorTuple =
+  | [IResponseInterceptor, IErrorInterceptor]
+  | [IResponseInterceptor]
+  | IResponseInterceptor;
 
-export interface RequestConfig<T = any> {
-  baseURL?: string;
-  timeout?: number;
+export interface RequestConfig<T = any> extends AxiosRequestConfig {
   errorConfig?: ErrorConfig<T>;
-  requestInterceptors?: Array<RequestInterceptor | InterceptorPair<RequestOptions>>;
-  responseInterceptors?: Array<
-    ResponseInterceptor<T> | InterceptorPair<UnifiedResponse<T>>
-  >;
-}
-
-export interface RequestOptions extends Omit<RequestConfig, 'requestInterceptors' | 'responseInterceptors' | 'errorConfig'> {
-  method?: HttpMethod;
-  headers?: Record<string, string>;
-  params?: Record<string, string | number | boolean | undefined | null>;
-  data?: any; // axios-like name
-  body?: any; // fetch-like name
-  skipErrorHandler?: boolean;
-  requestInterceptors?: Array<RequestInterceptor | InterceptorPair<RequestOptions>>;
-  responseInterceptors?: Array<
-    ResponseInterceptor | InterceptorPair<UnifiedResponse<any>>
-  >;
-  getResponse?: boolean; // default false
-}
-
-export type RequestOptionsWithResponse = RequestOptions & { getResponse: true };
-export type RequestOptionsWithoutResponse = RequestOptions & { getResponse: false };
-
-export interface UnifiedResponse<T = any> {
-  data: T;
-  status: number;
-  headers: Record<string, string>;
-  url: string;
-  raw?: any; // adapter-specific raw response (AxiosResponse or Fetch Response)
-}
-
-export type RequestError = Error & {
-  isAxiosError?: boolean;
-  response?: any;
-  request?: any;
-  status?: number;
-  data?: any;
-};
-
-export interface HttpAdapter {
-  request<T = any>(url: string, options: RequestOptions): Promise<UnifiedResponse<T>>;
+  requestInterceptors?: IRequestInterceptorTuple[];
+  responseInterceptors?: IResponseInterceptorTuple[];
 }
