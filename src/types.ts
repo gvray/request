@@ -6,11 +6,26 @@ export interface IErrorHandler {
   (error: RequestError, opts: IRequestOptions): void;
 }
 
-export interface IRequestOptions extends AxiosRequestConfig {
-  skipErrorHandler?: boolean;
+// 创建期配置（客户端级）
+export interface ClientConfig<T = any> extends AxiosRequestConfig {
+  errorConfig?: ErrorConfig<T>;
   requestInterceptors?: IRequestInterceptorTuple[];
   responseInterceptors?: IResponseInterceptorTuple[];
-  [key: string]: any;
+}
+
+export type RequestConfig<T = any> = ClientConfig<T>;
+
+// 请求期配置（运行时），等于 RequestConfig 去掉创建期专属字段
+export type RuntimeRequestConfig<T = any> = Omit<
+  ClientConfig<T>,
+  'errorConfig' | 'requestInterceptors' | 'responseInterceptors'
+>;
+
+export interface IRequestOptions extends RuntimeRequestConfig {
+  skipErrorHandler?: boolean;
+  getResponse?: boolean;
+  requestInterceptors?: IRequestInterceptorTuple[];
+  responseInterceptors?: IResponseInterceptorTuple[];
 }
 
 export type RequestOptions = IRequestOptions;
@@ -41,7 +56,7 @@ export interface ErrorConfig<T = any> {
   errorHandler?: IErrorHandler;
   errorThrower?: (res: T) => void;
 }
-export type IErrorInterceptor = (error: Error) => Promise<Error>;
+export type IErrorInterceptor = (error: AxiosError) => WithPromise<AxiosError>;
 export type IResponseInterceptor = <T = any>(
   response: AxiosResponse<T>
 ) => WithPromise<AxiosResponse<T>>;
@@ -55,11 +70,6 @@ export type IResponseInterceptorTuple =
   | [IResponseInterceptor]
   | IResponseInterceptor;
 
-export interface RequestConfig<T = any> extends AxiosRequestConfig {
-  errorConfig?: ErrorConfig<T>;
-  requestInterceptors?: IRequestInterceptorTuple[];
-  responseInterceptors?: IResponseInterceptorTuple[];
-}
 export interface HttpAdapter {
   request<T = any>(options: RequestOptions): Promise<T>;
 }

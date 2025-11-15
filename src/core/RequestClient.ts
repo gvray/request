@@ -5,20 +5,23 @@ import {
   IRequestOptions,
   IResponseInterceptorTuple,
   RequestConfig,
+  RuntimeRequestConfig,
+  IRequestInterceptor,
+  RequestOptions,
 } from '@/types';
 
 class RequestClient {
   constructor(options: RequestConfig) {
     const { errorConfig, requestInterceptors, responseInterceptors, ...rest } = options;
+    this.requestOptions = rest;
     this.errorConfig = errorConfig || null;
     this.requestInterceptors = requestInterceptors || null;
     this.responseInterceptors = responseInterceptors || null;
-    this.requestConfig = rest;
-    this.getRequestInstance(this.requestConfig || rest);
+    this.getRequestInstance(rest);
   }
   static requestClient: RequestClient | null = null;
   private requestInstance: AxiosInstance | null = null;
-  private requestConfig: RequestConfig;
+  private requestOptions: RequestOptions;
   private errorConfig: ErrorConfig | null = null;
   private requestInterceptors: IRequestInterceptorTuple[] | null = null;
   private responseInterceptors: IResponseInterceptorTuple[] | null = null;
@@ -28,21 +31,21 @@ class RequestClient {
     RequestClient.requestClient = new RequestClient(options);
     return RequestClient.requestClient;
   }
-  private getRequestInstance(config: RequestConfig) {
+  private getRequestInstance(config: RuntimeRequestConfig) {
     this.requestInstance = axiosAdapter.create(config);
 
-    this.requestInterceptors?.forEach((interceptor: any) => {
+    this.requestInterceptors?.forEach((interceptor) => {
       if (Array.isArray(interceptor)) {
-        this.requestInstance?.interceptors.request.use(async (config: any) => {
+        this.requestInstance?.interceptors.request.use(async (config) => {
           const { url } = config;
           if (interceptor[0].length === 2) {
             const { url: newUrl, options } = await interceptor[0](url || '', config);
             return { ...options, url: newUrl };
           }
-          return interceptor[0](config);
+          return (interceptor[0] as any)(config);
         }, interceptor[1]);
       } else {
-        this.requestInstance?.interceptors.request.use(async (config: any) => {
+        this.requestInstance?.interceptors.request.use(async (config) => {
           const { url } = config;
           if (interceptor.length === 2) {
             const { url: newUrl, options } = await interceptor(url || '', config);
@@ -53,7 +56,7 @@ class RequestClient {
       }
     });
 
-    this.responseInterceptors?.forEach((interceptor: any) => {
+    this.responseInterceptors?.forEach((interceptor) => {
       if (Array.isArray(interceptor)) {
         this.requestInstance?.interceptors.response.use(interceptor[0], interceptor[1]);
       } else {
@@ -64,8 +67,8 @@ class RequestClient {
     // 当响应的数据 success 是 false 的时候，抛出 error 以供 errorHandler 处理。
     this.requestInstance?.interceptors.response.use((response) => {
       const { data } = response;
-      if (data?.success === false && config?.errorConfig?.errorThrower) {
-        config.errorConfig.errorThrower(data);
+      if (data?.success === false && this.errorConfig?.errorThrower) {
+        this.errorConfig.errorThrower(data);
       }
       return response;
     });
@@ -73,16 +76,20 @@ class RequestClient {
     return this.requestInstance;
   }
 
-  public request(url: string, opts?: IRequestOptions) {
+  public request(url: string, opts?: RequestOptions) {
     const requestInstance = this.requestInstance;
 
     if (!requestInstance) throw new Error('Request instance is not initialized');
 
-    const { getResponse = false, requestInterceptors, responseInterceptors } = opts || {};
+    const {
+      getResponse = false,
+      requestInterceptors,
+      responseInterceptors,
+    } = opts || this.requestOptions || {};
 
-    const requestInterceptorsToEject = requestInterceptors?.map((interceptor: any) => {
+    const requestInterceptorsToEject = requestInterceptors?.map((interceptor) => {
       if (Array.isArray(interceptor)) {
-        return requestInstance.interceptors.request.use(async (config: any) => {
+        return requestInstance.interceptors.request.use(async (config) => {
           const { url } = config;
           if (interceptor[0].length === 2) {
             const { url: newUrl, options } = await interceptor[0](url || '', config);
@@ -91,7 +98,7 @@ class RequestClient {
           return interceptor[0](config);
         }, interceptor[1]);
       } else {
-        return requestInstance.interceptors.request.use(async (config: any) => {
+        return requestInstance.interceptors.request.use(async (config) => {
           const { url } = config;
           if (interceptor.length === 2) {
             const { url: newUrl, options } = await interceptor(url || '', config);
@@ -102,7 +109,7 @@ class RequestClient {
       }
     });
 
-    const responseInterceptorsToEject = responseInterceptors?.map((interceptor: any) => {
+    const responseInterceptorsToEject = responseInterceptors?.map((interceptor) => {
       if (Array.isArray(interceptor)) {
         return requestInstance.interceptors.response.use(interceptor[0], interceptor[1]);
       } else {
@@ -114,19 +121,19 @@ class RequestClient {
       requestInstance
         .request({ ...opts, url })
         .then((res) => {
-          requestInterceptorsToEject?.forEach((interceptor: any) => {
+          requestInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.request.eject(interceptor);
           });
-          responseInterceptorsToEject?.forEach((interceptor: any) => {
+          responseInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.response.eject(interceptor);
           });
           resolve(getResponse ? res : res.data);
         })
         .catch((error) => {
-          requestInterceptorsToEject?.forEach((interceptor: any) => {
+          requestInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.request.eject(interceptor);
           });
-          responseInterceptorsToEject?.forEach((interceptor: any) => {
+          responseInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.response.eject(interceptor);
           });
           try {
