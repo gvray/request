@@ -5,4 +5,6 @@ export default defineConfig({
   format: ['esm', 'cjs', 'umd'],
   outDir: './dist',
   globalName: 'UniRequest',
+  external: ['axios'],
+  sourcemap: true,
 });

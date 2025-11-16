@@ -1,4 +1,4 @@
-import { IRequestInterceptor, IRequestInterceptorAxios, RequestConfig } from '@/types';
+import { IRequestInterceptor, IRequestInterceptorAxios, RequestConfig } from '../types';
 
 export const wrapInterceptor = (fn: IRequestInterceptor) => {
   return async (config: RequestConfig) => {

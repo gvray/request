@@ -1,4 +1,4 @@
-import type { HttpAdapter, RequestOptions } from '@/types';
+import type { HttpAdapter, RequestOptions } from '../types';
 export abstract class Adapter implements HttpAdapter {
   abstract create<T = any>(options: RequestOptions): T;
   abstract request<T = any>(options: RequestOptions): Promise<T>;

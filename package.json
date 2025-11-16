@@ -1,6 +1,6 @@
 {
   "name": "unirequest",
-  "version": "1.0.0.alpha",
+  "version": "1.0.0-alpha.0",
   "description": "Universal Request Standard for Modern Web and Multi-Platform Apps",
   "type": "module",
   "main": "dist/unirequest.cjs.js",
@@ -12,9 +12,7 @@
       "require": "./dist/unirequest.cjs.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky install",
@@ -26,7 +24,11 @@
     "commit:check": "lavy commit --test",
     "commit:config": "lavy commit --config",
     "demo": "tsx example/node/example.ts",
-    "build": "swiftlet build"
+    "build": "swiftlet build",
+    "examples:backend": "pnpm -C examples/backend dev",
+    "examples:frontend": "pnpm -C examples/frontend dev",
+    "examples:nextjs": "pnpm -C examples/nextjs dev",
+    "examples:node": "pnpm -C examples/node dev"
   },
   "keywords": [],
   "author": "Gavin",

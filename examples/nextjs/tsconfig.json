@@ -26,9 +26,7 @@
       "@/*": [
         "./src/*"
       ],
-      "uni-request": [
-        "../../src/index.ts"
-      ]
+
     }
   },
   "include": [

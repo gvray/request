@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from 'uni-request'
+import { createClient } from 'unirequest'
 
 type Output = unknown
 

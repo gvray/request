@@ -1,4 +1,4 @@
-import { axiosAdapter, AxiosInstance } from '@/adapters';
+import { axiosAdapter, AxiosInstance } from '../adapters';
 import {
   ErrorConfig,
   IRequestInterceptorTuple,
@@ -7,7 +7,7 @@ import {
   RequestConfig,
   RuntimeRequestConfig,
   RequestOptions,
-} from '@/types';
+} from '../types';
 import { wrapInterceptor } from './interceptor';
 
 class RequestClient {

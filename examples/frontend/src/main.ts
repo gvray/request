@@ -1,4 +1,4 @@
-import { createClient } from 'uni-request';
+import { createClient } from 'unirequest';
 
 const client = createClient({
   baseURL: 'http://localhost:4000',

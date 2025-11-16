@@ -1,5 +1,4 @@
-import { createClient } from '../../src/client'
-import { errorConfig } from '../../src/requestErrorConfig'
+import { createClient, errorConfig } from 'unirequest'
 
 const client = createClient({
   baseURL: 'https://httpbin.org',

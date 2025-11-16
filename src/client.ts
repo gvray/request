@@ -1,5 +1,5 @@
 import RequestClient from './core/RequestClient';
-import type { RequestConfig } from '@/types';
+import type { RequestConfig } from './types';
 
 const createClient = (options: RequestConfig) => {
   return RequestClient.getRequestClient(options);

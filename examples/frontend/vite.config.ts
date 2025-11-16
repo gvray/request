@@ -6,9 +6,5 @@ export default defineConfig({
     open: true,
     fs: { allow: ['..'] }
   },
-  resolve: {
-    alias: {
-      'uni-request': '../../src/index.ts'
-    }
-  }
+
 });
