@@ -6,9 +6,9 @@ import {
   IResponseInterceptorTuple,
   RequestConfig,
   RuntimeRequestConfig,
-  IRequestInterceptor,
   RequestOptions,
 } from '@/types';
+import { wrapInterceptor } from './interceptor';
 
 class RequestClient {
   constructor(options: RequestConfig) {
@@ -36,29 +36,16 @@ class RequestClient {
 
     this.requestInterceptors?.forEach((interceptor) => {
       if (Array.isArray(interceptor)) {
-        this.requestInstance?.interceptors.request.use(async (config) => {
-          const { url } = config;
-          if (interceptor[0].length === 2) {
-            const { url: newUrl, options } = await interceptor[0](url || '', config);
-            return { ...options, url: newUrl };
-          }
-          return (interceptor[0] as any)(config);
-        }, interceptor[1]);
-      } else {
-        this.requestInstance?.interceptors.request.use(async (config) => {
-          const { url } = config;
-          if (interceptor.length === 2) {
-            const { url: newUrl, options } = await interceptor(url || '', config);
-            return { ...options, url: newUrl };
-          }
-          return interceptor(config);
-        });
+        const [success, fail] = interceptor;
+        return this.requestInstance?.interceptors.request.use(wrapInterceptor(success), fail);
       }
+      return this.requestInstance?.interceptors.request.use(wrapInterceptor(interceptor));
     });
 
     this.responseInterceptors?.forEach((interceptor) => {
       if (Array.isArray(interceptor)) {
-        this.requestInstance?.interceptors.response.use(interceptor[0], interceptor[1]);
+        const [success, fail] = interceptor;
+        this.requestInstance?.interceptors.response.use(success, fail);
       } else {
         this.requestInstance?.interceptors.response.use(interceptor);
       }
@@ -89,29 +76,16 @@ class RequestClient {
 
     const requestInterceptorsToEject = requestInterceptors?.map((interceptor) => {
       if (Array.isArray(interceptor)) {
-        return requestInstance.interceptors.request.use(async (config) => {
-          const { url } = config;
-          if (interceptor[0].length === 2) {
-            const { url: newUrl, options } = await interceptor[0](url || '', config);
-            return { ...options, url: newUrl };
-          }
-          return interceptor[0](config);
-        }, interceptor[1]);
-      } else {
-        return requestInstance.interceptors.request.use(async (config) => {
-          const { url } = config;
-          if (interceptor.length === 2) {
-            const { url: newUrl, options } = await interceptor(url || '', config);
-            return { ...options, url: newUrl };
-          }
-          return interceptor(config);
-        });
+        const [success, fail] = interceptor;
+        return requestInstance.interceptors.request.use(wrapInterceptor(success), fail);
       }
+      return requestInstance.interceptors.request.use(wrapInterceptor(interceptor));
     });
 
     const responseInterceptorsToEject = responseInterceptors?.map((interceptor) => {
       if (Array.isArray(interceptor)) {
-        return requestInstance.interceptors.response.use(interceptor[0], interceptor[1]);
+        const [success, fail] = interceptor;
+        return requestInstance.interceptors.response.use(success, fail);
       } else {
         return requestInstance.interceptors.response.use(interceptor);
       }
