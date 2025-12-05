@@ -7,7 +7,7 @@ import {
 } from './types';
 
 export const errorConfig: ErrorConfig = {
-  // 当响应的数据 success 是 false 的时候，抛出 error 以供 errorHandler 处理。
+  // When the response data "success" is false, throw an error for the errorHandler to handle.
   errorThrower: (res) => {
     const { success, data, code, message, showType } = res;
 
@@ -15,19 +15,18 @@ export const errorConfig: ErrorConfig = {
       const error = new Error(message) as BizError;
       error.name = 'BizError';
       error.info = { code, message, showType, data };
-      throw error; // 抛出自制的错误
+      throw error; // Throw a custom error for the errorHandler to handle.
     }
   },
-  // 接受 axios 的错误。
-  // 接受 errorThrower 抛出的错误。
+  // Accept axios errors.
+  // Accept errors thrown by errorThrower.
   errorHandler: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error: any,
     opts: IRequestOptions,
     feedBack?: (errorInfo: ErrorFeedInfo) => void
   ) => {
     if (opts?.skipErrorHandler) throw error;
-    // 我们的 errorThrower 抛出的错误。
+    // Our errorThrower throws errors.
     if (error.name === 'BizError') {
       const errorInfo = error.info;
       if (errorInfo) {
@@ -112,8 +111,8 @@ export const errorConfig: ErrorConfig = {
     } else if (error.response) {
       const res = error.response.data;
       const message = res?.message || error.response.statusText;
-      // Axios 的错误
-      // 请求成功发出且服务器也响应了状态码，但状态代码超出了 2xx 的范围
+      // Axios errors.
+      // The request was successfully sent and the server responded with a status code, but the status code exceeded the range of 2xx
       if (feedBack) {
         feedBack({
           showType: ErrorShowType.ERROR_MESSAGE,
@@ -125,20 +124,21 @@ export const errorConfig: ErrorConfig = {
         console.error('[UniRequest] AxiosError:', message, error);
       }
     } else if (error.request) {
-      // 请求已经成功发起，但没有收到响应
-      // \`error.request\` 在浏览器中是 XMLHttpRequest 的实例，
-      // 而在node.js中是 http.ClientRequest 的实例
+      // The request was successfully sent, but no response was received.
+      // \`error.request\` is an instance of XMLHttpRequest in the browser,
+      // and an instance of http.ClientRequest in node.js.
       if (feedBack) {
         feedBack({
           showType: ErrorShowType.SILENT,
           errorType: 'ResponseError',
           message: 'None response! Please retry.',
+          error,
         });
       } else {
         console.error('[UniRequest] ResponseError:', 'None response! Please retry.');
       }
     } else {
-      // 发送请求时出了点问题
+      // Something happened in setting up the request that triggered an Error.
       if (feedBack) {
         feedBack({
           showType: ErrorShowType.SILENT,
