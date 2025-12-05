@@ -1,8 +1,14 @@
-import { createClient } from 'unirequest';
+import { createClient, errorConfig } from 'unirequest';
 
 const client = createClient({
   baseURL: 'http://localhost:4000',
   timeout: 8000,
+  errorConfig: {
+    ...errorConfig,
+    errorFeedBack: (errorInfo) => {
+      console.error('[UniRequest] Error111:', errorInfo);
+    },
+  },
 });
 
 const out = document.getElementById('output')!;

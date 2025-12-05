@@ -9,7 +9,8 @@
   "exports": {
     ".": {
       "import": "./dist/unirequest.esm.js",
-      "require": "./dist/unirequest.cjs.js"
+      "require": "./dist/unirequest.cjs.js",
+      "types": "./dist/unirequest.d.ts"
     }
   },
   "files": [
@@ -27,6 +28,7 @@
     "commit:config": "lavy commit --config",
     "demo": "tsx example/node/example.ts",
     "build": "swiftlet build",
+    "dev": "swiftlet dev",
     "examples:backend": "pnpm -C examples/backend dev",
     "examples:frontend": "pnpm -C examples/frontend dev",
     "examples:nextjs": "pnpm -C examples/nextjs dev",

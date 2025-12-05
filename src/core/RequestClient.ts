@@ -112,8 +112,9 @@ class RequestClient {
           });
           try {
             const handler = this.errorConfig?.errorHandler;
+            const feedBack = this.errorConfig?.errorFeedBack;
             if (handler) {
-              handler(error, opts as IRequestOptions);
+              handler(error, opts as IRequestOptions, feedBack);
             }
           } catch (e) {
             reject(e);

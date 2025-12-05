@@ -3,7 +3,7 @@ import type { AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 export type RequestError = AxiosError | Error;
 
 export interface IErrorHandler {
-  (error: RequestError, opts: IRequestOptions): void;
+  (error: RequestError, opts: IRequestOptions, feedBack?: (errorInfo: ErrorFeedInfo) => void): void;
 }
 
 // 创建期配置（客户端级）
@@ -52,9 +52,36 @@ export type IRequestInterceptorAxiosTwoArg = (
   options: IRequestOptions
 ) => WithPromise<{ url: string; options: IRequestOptions }>;
 
+export type BizError = Error & {
+  name: string;
+  info: any;
+};
+
+export enum ErrorShowType {
+  SILENT = 0,
+  WARN_MESSAGE = 1,
+  ERROR_MESSAGE = 2,
+  NOTIFICATION = 3,
+  DEFAULT = 4,
+  REDIRECT = 9,
+}
+
+export type ErrorType = 'BizError' | 'AxiosError' | 'ResponseError' | 'RequestError';
+
+export type ErrorFeedInfo = {
+  showType: ErrorShowType;
+  errorType: ErrorType;
+  message: string;
+  code?: number;
+  error?: RequestError;
+};
+
+export type ErrorFeedBack = (errorInfo: ErrorFeedInfo) => void;
+
 export interface ErrorConfig<T = any> {
   errorHandler?: IErrorHandler;
   errorThrower?: (res: T) => void;
+  errorFeedBack?: ErrorFeedBack;
 }
 export type IErrorInterceptor = (error: AxiosError) => WithPromise<AxiosError>;
 export type IResponseInterceptor = <T = any>(

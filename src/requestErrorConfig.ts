@@ -1,13 +1,10 @@
-import type { ErrorConfig } from './types';
-
-// 错误处理方案： 错误类型
-enum ErrorShowType {
-  SILENT = 0,
-  WARN_MESSAGE = 1,
-  ERROR_MESSAGE = 2,
-  NOTIFICATION = 3,
-  REDIRECT = 9,
-}
+import {
+  ErrorFeedInfo,
+  ErrorShowType,
+  type BizError,
+  type ErrorConfig,
+  type IRequestOptions,
+} from './types';
 
 export const errorConfig: ErrorConfig = {
   // 当响应的数据 success 是 false 的时候，抛出 error 以供 errorHandler 处理。
@@ -15,7 +12,7 @@ export const errorConfig: ErrorConfig = {
     const { success, data, code, message, showType } = res;
 
     if (!success) {
-      const error: any = new Error(message);
+      const error = new Error(message) as BizError;
       error.name = 'BizError';
       error.info = { code, message, showType, data };
       throw error; // 抛出自制的错误
@@ -23,7 +20,12 @@ export const errorConfig: ErrorConfig = {
   },
   // 接受 axios 的错误。
   // 接受 errorThrower 抛出的错误。
-  errorHandler: (error: any, opts: any) => {
+  errorHandler: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    error: any,
+    opts: IRequestOptions,
+    feedBack?: (errorInfo: ErrorFeedInfo) => void
+  ) => {
     if (opts?.skipErrorHandler) throw error;
     // 我们的 errorThrower 抛出的错误。
     if (error.name === 'BizError') {
@@ -33,27 +35,78 @@ export const errorConfig: ErrorConfig = {
         switch (errorInfo.showType) {
           case ErrorShowType.SILENT:
             // do nothing
+            feedBack?.({
+              showType: ErrorShowType.SILENT,
+              errorType: error.name,
+              message,
+              code,
+              error,
+            });
             break;
           case ErrorShowType.WARN_MESSAGE:
-            // msg.warning(message);
+            if (feedBack) {
+              feedBack({
+                showType: ErrorShowType.WARN_MESSAGE,
+                errorType: error.name,
+                message,
+                code,
+                error,
+              });
+            } else {
+              console.warn('[UniRequest] WarnMessage:', message, error, code);
+            }
             break;
           case ErrorShowType.ERROR_MESSAGE:
-            // msg.error(message);
+            if (feedBack) {
+              feedBack({
+                showType: ErrorShowType.ERROR_MESSAGE,
+                errorType: error.name,
+                message,
+                code,
+                error,
+              });
+            } else {
+              console.error('[UniRequest] ErrorMessage:', message, error, code);
+            }
             break;
           case ErrorShowType.NOTIFICATION:
-            // notification.open({
-            //   description: message,
-            //   message: code,
-            // });
-            console.error('[UniRequest] Error:', message, error, code);
+            if (feedBack) {
+              feedBack({
+                showType: ErrorShowType.NOTIFICATION,
+                errorType: error.name,
+                message,
+                code,
+                error,
+              });
+            } else {
+              console.error('[UniRequest] Notification:', message, error, code);
+            }
             break;
           case ErrorShowType.REDIRECT:
-            // TODO: redirect
+            if (feedBack) {
+              feedBack({
+                showType: ErrorShowType.REDIRECT,
+                errorType: error.name,
+                message,
+                code,
+                error,
+              });
+            } else {
+              console.error('[UniRequest] Redirect:', message, error, code);
+            }
             break;
           default:
-            // msg.error(message);
-            // logger.error(error);
-            console.error('[UniRequest] Error:', message, error);
+            if (feedBack) {
+              feedBack({
+                showType: ErrorShowType.DEFAULT,
+                errorType: error.name,
+                message,
+                code,
+                error,
+              });
+            } else {
+              console.error('[UniRequest] Default:', message, error, code);
+            }
         }
       }
     } else if (error.response) {
@@ -61,15 +114,48 @@ export const errorConfig: ErrorConfig = {
       const message = res?.message || error.response.statusText;
       // Axios 的错误
       // 请求成功发出且服务器也响应了状态码，但状态代码超出了 2xx 的范围
-      console.error('[UniRequest] Error:', message);
+      if (feedBack) {
+        feedBack({
+          showType: ErrorShowType.ERROR_MESSAGE,
+          errorType: 'AxiosError',
+          message,
+          error,
+        });
+      } else {
+        console.error('[UniRequest] AxiosError:', message, error);
+      }
     } else if (error.request) {
       // 请求已经成功发起，但没有收到响应
       // \`error.request\` 在浏览器中是 XMLHttpRequest 的实例，
       // 而在node.js中是 http.ClientRequest 的实例
-      console.error('[UniRequest] Error:', 'None response! Please retry.');
+      if (feedBack) {
+        feedBack({
+          showType: ErrorShowType.SILENT,
+          errorType: 'ResponseError',
+          message: 'None response! Please retry.',
+        });
+      } else {
+        console.error('[UniRequest] ResponseError:', 'None response! Please retry.');
+      }
     } else {
       // 发送请求时出了点问题
-      console.error('[UniRequest] Error:', 'Request error, please retry.');
+      if (feedBack) {
+        feedBack({
+          showType: ErrorShowType.SILENT,
+          errorType: 'RequestError',
+          message: 'Request error, please retry.',
+          error,
+        });
+      } else {
+        console.error('[UniRequest] RequestError:', 'Request error, please retry.');
+      }
     }
+  },
+  errorFeedBack: (errorInfo: ErrorFeedInfo) => {
+    console.error(
+      '[UniRequest] ErrorFeedBack:',
+      errorInfo,
+      'It is recommended to rewrite the errorFeedBack method.'
+    );
   },
 };
