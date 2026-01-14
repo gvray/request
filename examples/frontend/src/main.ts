@@ -1,4 +1,4 @@
-import { createClient } from 'unirequest';
+import { createClient } from '@gvray/request';
 import api from './api';
 
 const out = document.getElementById('output')! as HTMLPreElement;

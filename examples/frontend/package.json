@@ -1,5 +1,5 @@
 {
-  "name": "uni-request-example-frontend",
+  "name": "request-example-frontend",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "preview": "vite preview --port 8080"
   },
   "dependencies": {
-    "unirequest": "workspace:*"
+    "@gvray/request": "workspace:*"
   },
   "devDependencies": {
     "vite": "^5.4.0",

@@ -52,7 +52,7 @@ export const errorConfig: ErrorConfig = {
                 error,
               });
             } else {
-              console.warn('[UniRequest] WarnMessage:', message, error, code);
+              console.warn('[Request] WarnMessage:', message, error, code);
             }
             break;
           case ErrorShowType.ERROR_MESSAGE:
@@ -65,7 +65,7 @@ export const errorConfig: ErrorConfig = {
                 error,
               });
             } else {
-              console.error('[UniRequest] ErrorMessage:', message, error, code);
+              console.error('[Request] ErrorMessage:', message, error, code);
             }
             break;
           case ErrorShowType.NOTIFICATION:
@@ -78,7 +78,7 @@ export const errorConfig: ErrorConfig = {
                 error,
               });
             } else {
-              console.error('[UniRequest] Notification:', message, error, code);
+              console.error('[Request] Notification:', message, error, code);
             }
             break;
           case ErrorShowType.REDIRECT:
@@ -91,7 +91,7 @@ export const errorConfig: ErrorConfig = {
                 error,
               });
             } else {
-              console.error('[UniRequest] Redirect:', message, error, code);
+              console.error('[Request] Redirect:', message, error, code);
             }
             break;
           default:
@@ -104,7 +104,7 @@ export const errorConfig: ErrorConfig = {
                 error,
               });
             } else {
-              console.error('[UniRequest] Default:', message, error, code);
+              console.error('[Request] Default:', message, error, code);
             }
         }
       }
@@ -121,7 +121,7 @@ export const errorConfig: ErrorConfig = {
           error,
         });
       } else {
-        console.error('[UniRequest] AxiosError:', message, error);
+        console.error('[Request] AxiosError:', message, error);
       }
     } else if (error.request) {
       // The request was successfully sent, but no response was received.
@@ -135,7 +135,7 @@ export const errorConfig: ErrorConfig = {
           error,
         });
       } else {
-        console.error('[UniRequest] ResponseError:', 'None response! Please retry.');
+        console.error('[Request] ResponseError:', 'None response! Please retry.');
       }
     } else {
       // Something happened in setting up the request that triggered an Error.
@@ -147,13 +147,13 @@ export const errorConfig: ErrorConfig = {
           error,
         });
       } else {
-        console.error('[UniRequest] RequestError:', 'Request error, please retry.');
+        console.error('[Request] RequestError:', 'Request error, please retry.');
       }
     }
   },
   errorFeedBack: (errorInfo: ErrorFeedInfo) => {
     console.error(
-      '[UniRequest] ErrorFeedBack:',
+      '[Request] ErrorFeedBack:',
       errorInfo,
       'It is recommended to rewrite the errorFeedBack method.'
     );

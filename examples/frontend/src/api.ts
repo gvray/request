@@ -1,4 +1,4 @@
-import { createClient, errorConfig } from 'unirequest';
+import { createClient, errorConfig } from '@gvray/request';
 
 // 模拟本地存储的 token（示例演示）
 let ACCESS_TOKEN: string | null = null;
@@ -11,7 +11,7 @@ const client = createClient({
   errorConfig: {
     ...errorConfig,
     errorFeedBack: (errorInfo) => {
-      console.error('[UniRequest] Error:', errorInfo);
+      console.error('[Request] Error:', errorInfo);
     },
   },
   features: {

@@ -1,5 +1,5 @@
 export * from './types';
-export { UniRequestClient, createClient, createRequestClient } from './client';
+export { RequestClient, createClient, createRequestClient } from './client';
 export { request, getClient, requestSafe } from './request';
 export type { RequestResult } from './types';
 export { errorConfig } from './requestErrorConfig';

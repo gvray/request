@@ -1,5 +1,5 @@
 {
-  "name": "uni-request-example-backend",
+  "name": "request-example-backend",
   "private": true,
   "type": "module",
   "scripts": {

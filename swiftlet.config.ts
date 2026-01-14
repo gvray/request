@@ -4,7 +4,7 @@ export default defineConfig({
   entry: './src/index.ts',
   format: ['esm', 'cjs', 'umd'],
   outDir: './dist',
-  globalName: 'UniRequest',
+  globalName: 'GvrayRequest',
   external: ['axios'],
   sourcemap: true,
   globals: {

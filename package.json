@@ -1,17 +1,17 @@
 {
-  "name": "unirequest",
+  "name": "@gvray/request",
   "version": "1.0.0-alpha.0",
   "description": "Universal Request Standard for Modern Web and Multi-Platform Apps",
   "type": "module",
-  "main": "dist/unirequest.cjs.js",
-  "module": "dist/unirequest.esm.js",
-  "types": "dist/unirequest.d.ts",
-  "unpkg": "dist/unirequest.min.js",
+  "main": "dist/gvray-request.cjs.js",
+  "module": "dist/gvray-request.esm.js",
+  "types": "dist/gvray-request.d.ts",
+  "unpkg": "dist/gvray-request.min.js",
   "exports": {
     ".": {
-      "import": "./dist/unirequest.esm.js",
-      "require": "./dist/unirequest.cjs.js",
-      "types": "./dist/unirequest.d.ts"
+      "import": "./dist/gvray-request.esm.js",
+      "require": "./dist/gvray-request.cjs.js",
+      "types": "./dist/gvray-request.d.ts"
     }
   },
   "files": [
@@ -36,7 +36,19 @@
     "examples:node": "pnpm -C examples/node dev",
     "prepublish": "pnpm build"
   },
-  "keywords": [],
+  "keywords": [
+    "request",
+    "http",
+    "axios",
+    "fetch",
+    "api",
+    "rest",
+    "client",
+    "universal",
+    "multi-platform",
+    "interceptor",
+    "typescript"
+  ],
   "author": "Gavin",
   "license": "MIT",
   "devDependencies": {
@@ -53,7 +65,7 @@
     "lavy": "^2.0.3",
     "lint-staged": "^15.5.2",
     "prettier": "^3.6.2",
-    "swiftlet": "^1.1.0",
+    "swiftlet": "^1.1.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },

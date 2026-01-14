@@ -5,4 +5,4 @@ const createClient = (options: RequestConfig) => {
   return RequestClient.getRequestClient(options);
 };
 
-export { createClient, createClient as createRequestClient, RequestClient as UniRequestClient };
+export { createClient, createClient as createRequestClient, RequestClient as RequestClient };

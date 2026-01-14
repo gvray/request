@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from 'unirequest'
+import { createClient } from '@gvray/request'
 
 type Output = unknown
 
@@ -10,7 +10,7 @@ export default function Page() {
 
   return (
     <main className="container mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-semibold tracking-tight mb-4">UniRequest Next.js 示例</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-4">Request Next.js 示例</h1>
       <div className="flex flex-wrap gap-3 mb-6">
         <button
           className="px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"

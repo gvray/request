@@ -1,12 +1,12 @@
 {
-  "name": "unirequest-example-node",
+  "name": "request-example-node",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx example.ts"
   },
   "dependencies": {
-    "unirequest": "workspace:*"
+    "@gvray/request": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.20.6",
