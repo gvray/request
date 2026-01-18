@@ -3,38 +3,145 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Request 示例</title>
+    <title>@gvray/request</title>
     <style>
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; margin: 20px; }
-      h1 { font-size: 20px; }
-      #buttons { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-      button { padding: 8px 12px; }
-      pre { background: #f7f7f7; padding: 12px; border-radius: 8px; min-height: 120px; }
-      /* error text style */
-      #output.error { color: #d32f2f; }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #fff;
+        color: #111;
+        margin: 0;
+        padding: 40px 20px;
+        line-height: 1.5;
+      }
+      .wrap { max-width: 720px; margin: 0 auto; }
+      h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+      .desc { color: #666; font-size: 13px; margin-bottom: 32px; }
+      section { margin-bottom: 28px; }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0 0 10px;
+      }
+      .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+      button {
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 7px 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        background: #fafafa;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+      button:hover { background: #f0f0f0; border-color: #d5d5d5; }
+      button:active { background: #e8e8e8; }
+      button.primary { background: #111; color: #fff; border-color: #111; }
+      button.primary:hover { background: #333; }
+      .output-wrap { margin-top: 32px; }
+      .output-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .output-head h2 { margin: 0; }
+      .output-hint { font-size: 11px; color: #999; }
+      #output {
+        font-family: 'SF Mono', Monaco, Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        background: #f5f5f5;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 16px;
+        min-height: 140px;
+        max-height: 280px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #333;
+      }
+      #output.error { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
     </style>
   </head>
   <body>
-    <h1>Request 前端示例</h1>
-    <div id="buttons">
-      <button id="btn-ping">Ping</button>
-      <button id="btn-users">Users</button>
-      <button id="btn-echo">Echo</button>
-      <button id="btn-error">Error</button>
-      <button id="btn-timeout">Timeout</button>
-      <button id="btn-404">404 Not Found</button>
-      <button id="btn-network">Network Error</button>
-      <!-- Auth & Interceptors -->
-      <button id="btn-login">Login</button>
-      <button id="btn-protected">Protected</button>
-      <button id="btn-expire">Expire & Retry</button>
-      <!-- Headers -->
-      <button id="btn-lang">Accept-Language</button>
-      <!-- Cookies -->
-      <button id="btn-cookie-set">Cookie Set</button>
-      <button id="btn-cookie-read">Cookie Read</button>
+    <div class="wrap">
+      <h1>@gvray/request</h1>
+      <p class="desc">HTTP 请求库拦截器演示</p>
+
+      <section>
+        <h2>Basic</h2>
+        <div class="btns">
+          <button id="btn-ping">Ping</button>
+          <button id="btn-users">Users</button>
+          <button id="btn-echo">Echo POST</button>
+          <button id="btn-error">400</button>
+          <button id="btn-404">404</button>
+          <button id="btn-network">Network Error</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Auth</h2>
+        <div class="btns">
+          <button id="btn-login" class="primary">Login</button>
+          <button id="btn-protected">Protected</button>
+          <button id="btn-expire">Expire Token</button>
+          <button id="btn-lang">Language</button>
+          <button id="btn-cookie-set">Set Cookie</button>
+          <button id="btn-cookie-read">Read Cookie</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Retry</h2>
+        <div class="btns">
+          <button id="btn-retry-reset">Reset</button>
+          <button id="btn-retry-success" class="primary">Retry OK</button>
+          <button id="btn-retry-fail">Retry Fail</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Timeout</h2>
+        <div class="btns">
+          <button id="btn-timeout-ok">500ms OK</button>
+          <button id="btn-timeout-fail">3s Timeout</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Cache</h2>
+        <div class="btns">
+          <button id="btn-cache-timestamp" class="primary">Timestamp</button>
+          <button id="btn-cache-data1">Data #1</button>
+          <button id="btn-cache-data2">Data #2</button>
+          <button id="btn-cache-nocache">No Cache</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Logging</h2>
+        <div class="btns">
+          <button id="btn-log-get">GET</button>
+          <button id="btn-log-post">POST</button>
+        </div>
+      </section>
+
+      <div class="output-wrap">
+        <div class="output-head">
+          <h2>Output</h2>
+          <span class="output-hint">Logging → Console</span>
+        </div>
+        <pre id="output">Waiting...</pre>
+      </div>
     </div>
-    <pre id="output">等待操作...</pre>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

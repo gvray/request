@@ -6,7 +6,6 @@ export default defineConfig({
   outDir: './dist',
   globalName: 'GvrayRequest',
   external: ['axios'],
-  sourcemap: true,
   globals: {
     axios: 'axios',
   },

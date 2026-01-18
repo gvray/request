@@ -75,50 +75,164 @@ function showError(e: any) {
   }
 };
 
-// 认证流程演示
+// ============================================
+// 认证拦截器演示
+// ============================================
 (document.getElementById('btn-login') as HTMLButtonElement).onclick = async () => {
   try {
     await api.login();
     const tokens = api.getTokens();
     show({ login: true, ...tokens });
-  } catch (e: any) {
+  } catch (e: unknown) {
     showError(e);
   }
 };
 
-// 访问受保护接口（需要 Authorization）
 (document.getElementById('btn-protected') as HTMLButtonElement).onclick = async () => {
   try {
     const data = await api.protected();
     show(data);
-  } catch (e: any) {
+  } catch (e: unknown) {
     showError(e);
   }
 };
 
-// 模拟 token 过期：篡改本地 ACCESS_TOKEN，然后访问受保护接口，触发刷新与重试
 (document.getElementById('btn-expire') as HTMLButtonElement).onclick = async () => {
   try {
     const expired = api.expireToken();
     const data = await api.protected();
     show({ expired, retried: true, data });
-  } catch (e: any) {
+  } catch (e: unknown) {
     showError(e);
   }
 };
 
-// Accept-Language 演示
 (document.getElementById('btn-lang') as HTMLButtonElement).onclick = async () => {
   const data = await api.lang();
   show(data);
 };
 
-// Cookie 跨域演示
 (document.getElementById('btn-cookie-set') as HTMLButtonElement).onclick = async () => {
   const data = await api.cookieSet();
   show(data);
 };
+
 (document.getElementById('btn-cookie-read') as HTMLButtonElement).onclick = async () => {
   const data = await api.cookieRead();
   show(data);
+};
+
+// ============================================
+// 重试拦截器演示
+// ============================================
+(document.getElementById('btn-retry-reset') as HTMLButtonElement).onclick = async () => {
+  try {
+    const data = await api.retryReset();
+    show({ reset: true, data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+(document.getElementById('btn-retry-success') as HTMLButtonElement).onclick = async () => {
+  try {
+    show({ status: '请求中... (前2次会失败，第3次成功)' });
+    const data = await api.retrySuccess();
+    show({ success: true, data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+(document.getElementById('btn-retry-fail') as HTMLButtonElement).onclick = async () => {
+  try {
+    show({ status: '请求中... (会失败5次，超过重试次数)' });
+    const data = await api.retryFail();
+    show(data.data);
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+// ============================================
+// 超时拦截器演示
+// ============================================
+(document.getElementById('btn-timeout-ok') as HTMLButtonElement).onclick = async () => {
+  try {
+    show({ status: '请求中... (延迟500ms，超时2s)' });
+    const data = await api.timeoutOk();
+    show(data);
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+(document.getElementById('btn-timeout-fail') as HTMLButtonElement).onclick = async () => {
+  try {
+    show({ status: '请求中... (延迟3s，超时1s，会超时)' });
+    const data = await api.timeoutFail();
+    show(data);
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+// ============================================
+// 缓存拦截器演示
+// ============================================
+(document.getElementById('btn-cache-timestamp') as HTMLButtonElement).onclick = async () => {
+  try {
+    const data = await api.cacheTimestamp();
+    show({ cached: '5秒内再次请求会命中缓存', data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+(document.getElementById('btn-cache-data1') as HTMLButtonElement).onclick = async () => {
+  try {
+    const data = await api.cacheData1();
+    show({ id: 1, data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+(document.getElementById('btn-cache-data2') as HTMLButtonElement).onclick = async () => {
+  try {
+    const data = await api.cacheData2();
+    show({ id: 2, data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+(document.getElementById('btn-cache-nocache') as HTMLButtonElement).onclick = async () => {
+  try {
+    const data = await api.cacheNoCache();
+    show({ noCache: true, data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+// ============================================
+// 日志拦截器演示 (查看控制台)
+// ============================================
+(document.getElementById('btn-log-get') as HTMLButtonElement).onclick = async () => {
+  try {
+    const data = await api.logGet();
+    show({ message: '查看浏览器控制台的日志输出', data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
+};
+
+(document.getElementById('btn-log-post') as HTMLButtonElement).onclick = async () => {
+  try {
+    const data = await api.logPost();
+    show({ message: '查看浏览器控制台的日志输出', data: data.data });
+  } catch (e: unknown) {
+    showError(e);
+  }
 };

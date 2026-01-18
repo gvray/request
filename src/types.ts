@@ -6,7 +6,7 @@ export interface IErrorHandler {
   (error: RequestError, opts: IRequestOptions, feedBack?: (errorInfo: ErrorFeedInfo) => void): void;
 }
 
-export interface BuiltinFeatures {
+export interface Preset {
   bearerAuth?: {
     getToken: () => WithPromise<string | null | undefined>;
     header?: string;
@@ -35,7 +35,7 @@ export interface ClientConfig<T = any> extends AxiosRequestConfig {
   errorConfig?: ErrorConfig<T>;
   requestInterceptors?: IRequestInterceptorTuple[];
   responseInterceptors?: IResponseInterceptorTuple[];
-  features?: BuiltinFeatures;
+  preset?: Preset;
 }
 
 export type RequestConfig<T = any> = ClientConfig<T>;

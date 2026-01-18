@@ -1,12 +1,23 @@
-import { createClient, errorConfig } from '@gvray/request';
+import {
+  createClient,
+  errorConfig,
+  axiosAdapter,
+  createRetryInterceptor,
+  createCacheInterceptor,
+  createLoggingInterceptor,
+} from '@gvray/request';
 
 // 模拟本地存储的 token（示例演示）
 let ACCESS_TOKEN: string | null = null;
 let REFRESH_TOKEN: string | null = null;
 
-// 统一创建并导出客户端实例，注册所有拦截器
+const BASE_URL = 'http://localhost:4000';
+
+// ============================================
+// 主客户端：带认证和基础拦截器
+// ============================================
 const client = createClient({
-  baseURL: 'http://localhost:4010',
+  baseURL: BASE_URL,
   timeout: 8000,
   errorConfig: {
     ...errorConfig,
@@ -25,7 +36,6 @@ const client = createClient({
     authRefresh: {
       refreshToken: async () => {
         if (!REFRESH_TOKEN) return null;
-        // 避免刷新请求被旧的 Authorization 头干扰：临时清空 token
         const previous = ACCESS_TOKEN;
         ACCESS_TOKEN = null;
         try {
@@ -37,7 +47,6 @@ const client = createClient({
           ACCESS_TOKEN = (res as any).data?.accessToken || null;
           return ACCESS_TOKEN;
         } catch (e) {
-          // 刷新失败，恢复之前的 token（示例场景）
           ACCESS_TOKEN = previous;
           throw e;
         }
@@ -58,6 +67,60 @@ const client = createClient({
     withCredentials: true,
   },
 });
+
+// ============================================
+// 创建拦截器实例
+// ============================================
+
+// 重试拦截器：最多重试3次，指数退避
+const retryInterceptors = createRetryInterceptor({
+  maxRetries: 3,
+  retryDelay: 500,
+  exponentialBackoff: true,
+  retryCondition: (error) => {
+    const status = error.response?.status;
+    return status === 503 || status === 502 || status === 500;
+  },
+  onRetry: (retryCount, error) => {
+    console.log(`[Retry] Attempt ${retryCount}, error:`, error.message);
+  },
+});
+
+// 缓存拦截器：TTL 5秒
+const cacheInterceptors = createCacheInterceptor({
+  ttl: 5000,
+  onCacheHit: (key) => console.log(`[Cache] HIT: ${key}`),
+  onCacheMiss: (key) => console.log(`[Cache] MISS: ${key}`),
+});
+
+// 日志拦截器
+const loggingInterceptors = createLoggingInterceptor({
+  logRequest: true,
+  logResponse: true,
+  logError: true,
+  logRequestBody: true,
+  logResponseBody: true,
+});
+
+// ============================================
+// 带重试的 axios 实例
+// ============================================
+const retryAxios = axiosAdapter.create({ baseURL: BASE_URL, timeout: 10000 });
+retryAxios.interceptors.response.use(...retryInterceptors);
+
+// ============================================
+// 带缓存的 axios 实例
+// ============================================
+const cacheAxios = axiosAdapter.create({ baseURL: BASE_URL, timeout: 8000 });
+cacheAxios.interceptors.request.use(cacheInterceptors.request);
+cacheAxios.interceptors.response.use(...cacheInterceptors.response);
+
+// ============================================
+// 带日志的 axios 实例
+// ============================================
+const loggingAxios = axiosAdapter.create({ baseURL: BASE_URL, timeout: 8000 });
+loggingAxios.interceptors.request.use(loggingInterceptors.request);
+loggingAxios.interceptors.response.use(...loggingInterceptors.response);
 
 // 集中管理 API 接口定义
 export const api = {
@@ -91,6 +154,33 @@ export const api = {
     return ACCESS_TOKEN;
   },
   getTokens: () => ({ accessToken: ACCESS_TOKEN, refreshToken: REFRESH_TOKEN }),
+
+  // ============================================
+  // Retry 演示
+  // ============================================
+  retryReset: () => retryAxios.post('/api/unstable/reset'),
+  retrySuccess: () => retryAxios.get('/api/unstable?failTimes=2'),
+  retryFail: () => retryAxios.get('/api/unstable?failTimes=5'),
+
+  // ============================================
+  // Timeout 演示
+  // ============================================
+  timeoutOk: () => client.request('/api/delay/500', { method: 'GET', timeout: 2000 }),
+  timeoutFail: () => client.request('/api/delay/3000', { method: 'GET', timeout: 1000 }),
+
+  // ============================================
+  // Cache 演示
+  // ============================================
+  cacheTimestamp: () => cacheAxios.get('/api/timestamp'),
+  cacheData1: () => cacheAxios.get('/api/data/1'),
+  cacheData2: () => cacheAxios.get('/api/data/2'),
+  cacheNoCache: () => cacheAxios.get('/api/timestamp', { params: { noCache: true } }),
+
+  // ============================================
+  // Logging 演示
+  // ============================================
+  logGet: () => loggingAxios.get('/api/headers'),
+  logPost: () => loggingAxios.post('/api/log-test', { message: 'Hello', timestamp: Date.now() }),
 };
 
 export default api;

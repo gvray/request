@@ -9,16 +9,23 @@
   "unpkg": "dist/gvray-request.min.js",
   "exports": {
     ".": {
-      "import": "./dist/gvray-request.esm.js",
-      "require": "./dist/gvray-request.cjs.js",
-      "types": "./dist/gvray-request.d.ts"
+      "import": {
+        "types": "./dist/gvray-request.d.ts",
+        "default": "./dist/gvray-request.esm.js"
+      },
+      "require": {
+        "types": "./dist/gvray-request.d.ts",
+        "default": "./dist/gvray-request.cjs.js"
+      }
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "prepare": "husky install",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
@@ -30,10 +37,8 @@
     "demo": "tsx example/node/example.ts",
     "build": "swiftlet build",
     "dev": "swiftlet dev",
-    "examples:backend": "pnpm -C examples/backend dev",
-    "examples:frontend": "pnpm -C examples/frontend dev",
-    "examples:nextjs": "pnpm -C examples/nextjs dev",
-    "examples:node": "pnpm -C examples/node dev",
+    "playground": "pnpm -C examples/request-app dev",
+    "playground:vanilla": "concurrently \"pnpm -C examples/backend dev\" \"pnpm -C examples/frontend dev\"",
     "prepublish": "pnpm build"
   },
   "keywords": [
@@ -62,12 +67,14 @@
     "eslint-plugin-import": "^2.32.0",
     "globals": "^15.15.0",
     "husky": "^9.1.7",
-    "lavy": "^2.0.3",
+    "lavy": "^2.0.6",
     "lint-staged": "^15.5.2",
     "prettier": "^3.6.2",
-    "swiftlet": "^1.1.2",
+    "swiftlet": "^1.2.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.8",
+    "concurrently": "^9.1.2"
   },
   "dependencies": {
     "axios": "^1.7.7"

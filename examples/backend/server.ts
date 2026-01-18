@@ -70,9 +70,24 @@ app.get('/api/ping', (_req: Request, res: Response) => {
 
 app.get('/api/users', (_req: Request, res: Response) => {
   res.json([
-    { id: 1, name: 'Alice' },
-    { id: 2, name: 'Bob' },
+    { id: 1, name: 'Alice', email: 'alice@example.com' },
+    { id: 2, name: 'Bob', email: 'bob@example.com' },
   ]);
+});
+
+app.get('/api/users/:id', (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const users = [
+    { id: 1, name: 'Alice', email: 'alice@example.com' },
+    { id: 2, name: 'Bob', email: 'bob@example.com' },
+  ];
+  const user = users.find(u => u.id === id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json(user);
+});
+
+app.post('/api/users', (req: Request, res: Response) => {
+  res.status(201).json({ id: Date.now(), ...req.body, createdAt: new Date().toISOString() });
 });
 
 app.post('/api/echo', (req: Request, res: Response) => {
@@ -89,6 +104,158 @@ app.get('/api/error', (_req: Request, res: Response) => {
   res.status(400).json({ success: false, errorMessage: 'Business error' });
 });
 
+app.get('/api/not-found', (_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Resource not found' });
+});
+
+app.get('/api/server-error', (_req: Request, res: Response) => {
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+app.get('/api/service-unavailable', (_req: Request, res: Response) => {
+  res.status(503).json({ error: 'Service temporarily unavailable' });
+});
+
+// Alternative refresh token endpoint
+app.post('/api/refresh-token', (_req: Request, res: Response) => {
+  // For demo, always succeed and return new token
+  accessToken = `token-${Date.now()}`;
+  res.json({ token: accessToken, refreshToken: `refresh-${Date.now()}` });
+});
+
+// User profile and settings (protected)
+app.get('/api/user/profile', (req: Request, res: Response) => {
+  const auth = req.headers['authorization'];
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  res.json({ id: 1, name: 'Alice', email: 'alice@example.com', avatar: 'https://i.pravatar.cc/150' });
+});
+
+app.get('/api/user/settings', (req: Request, res: Response) => {
+  const auth = req.headers['authorization'];
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  res.json({ theme: 'light', language: 'en', notifications: true });
+});
+
+// ============================================
+// Retry 演示接口
+// ============================================
+let retryCount = 0;
+// 模拟不稳定接口：前 N 次失败，之后成功
+app.get('/api/unstable', (req: Request, res: Response) => {
+  const failTimes = parseInt(req.query.failTimes as string) || 2;
+  retryCount++;
+  console.log(`[Unstable API] Attempt ${retryCount}, failTimes=${failTimes}`);
+  if (retryCount <= failTimes) {
+    return res.status(503).json({ error: 'Service temporarily unavailable', attempt: retryCount });
+  }
+  const result = { ok: true, attempt: retryCount, message: 'Success after retries' };
+  retryCount = 0; // Reset for next test
+  res.json(result);
+});
+
+// 重置 retry 计数器
+app.post('/api/unstable/reset', (_req: Request, res: Response) => {
+  retryCount = 0;
+  res.json({ reset: true, message: 'Counter reset to 0' });
+});
+
+// 查看 retry 状态
+app.get('/api/unstable/status', (_req: Request, res: Response) => {
+  res.json({ currentCount: retryCount });
+});
+
+// ============================================
+// Cache 演示接口
+// ============================================
+// 返回时间戳，用于验证缓存是否生效
+app.get('/api/timestamp', (_req: Request, res: Response) => {
+  res.json({ timestamp: Date.now(), time: new Date().toISOString() });
+});
+
+// 带参数的缓存演示
+app.get('/api/data/:id', (req: Request, res: Response) => {
+  res.json({ id: req.params.id, timestamp: Date.now(), random: Math.random() });
+});
+
+// ============================================
+// Timeout 演示接口
+// ============================================
+// 可配置延迟的接口
+app.get('/api/delay/:ms', async (req: Request, res: Response) => {
+  const ms = parseInt(req.params.ms as string) || 1000;
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  res.json({ ok: true, delayedMs: ms, time: new Date().toISOString() });
+});
+
+// ============================================
+// Logging 演示接口
+// ============================================
+// 返回请求头信息，用于验证 logging
+app.get('/api/headers', (req: Request, res: Response) => {
+  res.json({
+    headers: req.headers,
+    method: req.method,
+    url: req.url,
+  });
+});
+
+// POST 请求，返回请求体
+app.post('/api/log-test', (req: Request, res: Response) => {
+  res.json({
+    received: req.body,
+    headers: {
+      'content-type': req.headers['content-type'],
+      'accept-language': req.headers['accept-language'],
+      authorization: req.headers['authorization'] ? '[PRESENT]' : '[MISSING]',
+    },
+  });
+});
+
+// ============================================
+// 综合演示接口
+// ============================================
+// 模拟真实 API：带认证、分页、缓存
+app.get('/api/posts', (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const posts = Array.from({ length: limit }, (_, i) => ({
+    id: (page - 1) * limit + i + 1,
+    title: `Post ${(page - 1) * limit + i + 1}`,
+    createdAt: new Date().toISOString(),
+  }));
+  res.json({ page, limit, total: 100, data: posts });
+});
+
+// 模拟文件上传
+app.post('/api/upload', (req: Request, res: Response) => {
+  res.json({ uploaded: true, contentType: req.headers['content-type'] });
+});
+
 app.listen(PORT, () => {
   console.log(`Example backend running at http://localhost:${PORT}`);
+  console.log(`
+Available endpoints:
+  - GET  /api/ping          - Basic ping
+  - GET  /api/users         - Get users
+  - POST /api/echo          - Echo request body
+  - GET  /api/slow          - Slow response (2s)
+  - GET  /api/error         - Business error (400)
+  - POST /api/login         - Login and get tokens
+  - POST /api/refresh       - Refresh access token
+  - GET  /api/protected     - Protected endpoint (needs auth)
+  - GET  /api/lang          - Show Accept-Language header
+  - GET  /api/cookie-set    - Set a cookie
+  - GET  /api/cookie-read   - Read cookies
+  - GET  /api/unstable      - Retry demo (fails first N times)
+  - GET  /api/timestamp     - Cache demo (returns timestamp)
+  - GET  /api/data/:id      - Cache demo with params
+  - GET  /api/delay/:ms     - Timeout demo (configurable delay)
+  - GET  /api/headers       - Logging demo (show headers)
+  - POST /api/log-test      - Logging demo (POST)
+  - GET  /api/posts         - Paginated posts
+  `);
 });
