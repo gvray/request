@@ -1,8 +1,10 @@
 import { axiosAdapter, AxiosInstance } from '../adapters';
+import type { AxiosResponse } from 'axios';
 import {
   ErrorConfig,
   IRequestInterceptorTuple,
   IRequestOptions,
+  IRequestOptionsWithResponse,
   IResponseInterceptorTuple,
   RequestConfig,
   RuntimeRequestConfig,
@@ -101,7 +103,12 @@ class RequestClient {
     return this.requestInstance;
   }
 
-  public request(url: string, opts?: RequestOptions) {
+  public request<T = any>(
+    url: string,
+    opts: IRequestOptionsWithResponse
+  ): Promise<AxiosResponse<T>>;
+  public request<T = any>(url: string, opts?: RequestOptions): Promise<T>;
+  public request<T = any>(url: string, opts?: RequestOptions): Promise<T | AxiosResponse<T>> {
     const requestInstance = this.requestInstance;
 
     if (!requestInstance) throw new Error('Request instance is not initialized');
@@ -129,9 +136,9 @@ class RequestClient {
       }
     });
 
-    return new Promise((resolve, reject) => {
+    return new Promise<T | AxiosResponse<T>>((resolve, reject) => {
       requestInstance
-        .request({ ...opts, url })
+        .request<T>({ ...opts, url })
         .then((res) => {
           requestInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.request.eject(interceptor);

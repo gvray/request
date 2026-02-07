@@ -1,16 +1,21 @@
 import RequestClient from './core/RequestClient';
-import { IRequestOptions, RequestResult } from './types';
+import { IRequestOptions, IRequestOptionsWithResponse, RequestResult } from './types';
 import type { AxiosResponse } from 'axios';
 
 export const getClient = () => {
   return RequestClient.requestClient;
 };
 
-export const request = (url: string, opts: IRequestOptions = { method: 'GET' }) => {
+export function request<T = any>(
+  url: string,
+  opts: IRequestOptionsWithResponse
+): Promise<AxiosResponse<T>>;
+export function request<T = any>(url: string, opts?: IRequestOptions): Promise<T>;
+export function request<T = any>(url: string, opts: IRequestOptions = { method: 'GET' }) {
   const client = getClient();
   if (!client) throw new Error('Request client not initialized');
-  return client.request(url, opts);
-};
+  return client.request<T>(url, opts);
+}
 
 export const requestSafe = async <T = any>(
   url: string,
