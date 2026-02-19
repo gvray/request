@@ -1,6 +1,6 @@
 {
   "name": "@gvray/request",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Universal Request Standard for Modern Web and Multi-Platform Apps",
   "type": "module",
   "main": "dist/gvray-request.cjs.js",
