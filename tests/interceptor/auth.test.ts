@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { bearerAuth, createAuthRefreshInterceptor } from '../../src/interceptor/auth';
-import type { IRequestOptions } from '../../src/types';
+import type { HttpRequestOptions, HttpInstance } from '../../src/types';
+
+function createMockInstance(overrides: Partial<HttpInstance> = {}): HttpInstance {
+  return {
+    request: vi
+      .fn()
+      .mockResolvedValue({ data: {}, status: 200, statusText: 'OK', headers: {}, config: {} }),
+    ...overrides,
+  } as unknown as HttpInstance;
+}
 
 describe('bearerAuth', () => {
   beforeEach(() => {
@@ -11,7 +20,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -27,7 +36,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('my-token');
     const interceptor = bearerAuth(getToken, 'X-Auth-Token', 'Token');
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -41,7 +50,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/login',
       headers: {},
       skipAuth: true,
@@ -57,7 +66,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', ['/public', '/auth']);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/public/data',
       headers: {},
     };
@@ -71,7 +80,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', [/^\/api\/public\/.*/]);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/public/resource',
       headers: {},
     };
@@ -86,7 +95,7 @@ describe('bearerAuth', () => {
     const excludeFn = vi.fn((url?: string) => url?.includes('/no-auth') ?? false);
     const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', excludeFn);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/no-auth/endpoint',
       headers: {},
     };
@@ -101,7 +110,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue(null);
     const interceptor = bearerAuth(getToken);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -115,7 +124,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue(undefined);
     const interceptor = bearerAuth(getToken);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -129,7 +138,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {
         'Content-Type': 'application/json',
@@ -148,7 +157,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockReturnValue('sync-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -161,7 +170,7 @@ describe('bearerAuth', () => {
 
 describe('createAuthRefreshInterceptor', () => {
   it('should return response interceptor tuple', () => {
-    const [onResponse, onError] = createAuthRefreshInterceptor({
+    const [onResponse, onError] = createAuthRefreshInterceptor(createMockInstance(), {
       refreshToken: vi.fn().mockResolvedValue('new-token'),
     });
 
@@ -170,7 +179,7 @@ describe('createAuthRefreshInterceptor', () => {
   });
 
   it('should pass through successful responses', async () => {
-    const [onResponse] = createAuthRefreshInterceptor({
+    const [onResponse] = createAuthRefreshInterceptor(createMockInstance(), {
       refreshToken: vi.fn().mockResolvedValue('new-token'),
     });
 
@@ -181,7 +190,7 @@ describe('createAuthRefreshInterceptor', () => {
   });
 
   it('should reject non-auth errors', async () => {
-    const [, onError] = createAuthRefreshInterceptor({
+    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
       refreshToken: vi.fn().mockResolvedValue('new-token'),
     });
 
@@ -195,7 +204,7 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should call loginRedirect when refresh fails', async () => {
     const loginRedirect = vi.fn();
-    const [, onError] = createAuthRefreshInterceptor({
+    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
       refreshToken: vi.fn().mockRejectedValue(new Error('Refresh failed')),
       loginRedirect,
     });
@@ -214,7 +223,7 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should call loginRedirect on retry failure', async () => {
     const loginRedirect = vi.fn();
-    const [, onError] = createAuthRefreshInterceptor({
+    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
       refreshToken: vi.fn().mockResolvedValue('new-token'),
       loginRedirect,
     });
@@ -233,7 +242,7 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should handle custom status codes', async () => {
     const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
-    const [, onError] = createAuthRefreshInterceptor({
+    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
       refreshToken,
       statuses: [419],
     });
@@ -251,7 +260,7 @@ describe('createAuthRefreshInterceptor', () => {
     const setToken = vi.fn();
     const refreshToken = vi.fn().mockResolvedValue('new-token');
 
-    createAuthRefreshInterceptor({
+    createAuthRefreshInterceptor(createMockInstance(), {
       refreshToken,
       setToken,
     });
@@ -270,7 +279,8 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockReturnValue(refreshPromise);
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor({
+      const mockInstance = createMockInstance();
+      const [, onError] = createAuthRefreshInterceptor(mockInstance, {
         refreshToken,
         loginRedirect,
       });
@@ -291,8 +301,7 @@ describe('createAuthRefreshInterceptor', () => {
       // Resolve the refresh
       resolveRefresh!('new-token');
 
-      // All promises should eventually resolve or reject
-      // (They will reject because axiosAdapter.request is not mocked)
+      // All promises should eventually resolve (instance.request is mocked)
       await Promise.allSettled([promise1, promise2, promise3]);
 
       // loginRedirect should NOT have been called (refresh succeeded)
@@ -303,7 +312,7 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor({
+      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
         refreshToken,
         loginRedirect,
       });
@@ -333,7 +342,7 @@ describe('createAuthRefreshInterceptor', () => {
       const loginRedirect = vi.fn();
       const refreshToken = vi.fn().mockResolvedValue(null); // Returns null = no token
 
-      const [, onError] = createAuthRefreshInterceptor({
+      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
         refreshToken,
         loginRedirect,
       });
@@ -341,10 +350,7 @@ describe('createAuthRefreshInterceptor', () => {
       const error1 = { response: { status: 401 }, config: { url: '/api/1' } };
       const error2 = { response: { status: 401 }, config: { url: '/api/2' } };
 
-      await Promise.allSettled([
-        onError(error1 as any),
-        onError(error2 as any),
-      ]);
+      await Promise.allSettled([onError(error1 as any), onError(error2 as any)]);
 
       // Wait for setTimeout in safeLoginRedirect
       await vi.waitFor(() => {
@@ -356,7 +362,7 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor({
+      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
         refreshToken,
         loginRedirect,
       });
@@ -371,11 +377,11 @@ describe('createAuthRefreshInterceptor', () => {
       // Second request should work (state reset to idle)
       refreshToken.mockResolvedValueOnce('new-token');
       const error2 = { response: { status: 401 }, config: { url: '/api/2' } };
-      
+
       // This will try to refresh again
       const promise2 = onError(error2 as any);
       await Promise.allSettled([promise2]);
-      
+
       // Refresh should have been called twice now
       expect(refreshToken).toHaveBeenCalledTimes(2);
     });
@@ -384,7 +390,7 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockResolvedValue('new-token');
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor({
+      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
         refreshToken,
         loginRedirect,
       });

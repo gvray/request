@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { withCredentials } from '../../src/interceptor/credentials';
-import type { IRequestOptions } from '../../src/types';
+import type { HttpRequestOptions } from '../../src/types';
 
 describe('withCredentials', () => {
   it('should set withCredentials to true', async () => {
     const interceptor = withCredentials();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -19,7 +19,7 @@ describe('withCredentials', () => {
   it('should preserve other config options', async () => {
     const interceptor = withCredentials();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'POST',
       headers: {
@@ -40,7 +40,7 @@ describe('withCredentials', () => {
   it('should override existing withCredentials value', async () => {
     const interceptor = withCredentials();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
       withCredentials: false,

@@ -1,18 +1,18 @@
-import type { IRequestInterceptorAxios } from '../types';
+import type { HttpInterceptor } from '../types';
 import type { StringProvider } from './auth';
 
 /**
  * 为非 GET/HEAD 请求自动注入 Content-Type: application/json（若未显式设置）
  */
-export function jsonContentType(): IRequestInterceptorAxios {
+export function jsonContentType(): HttpInterceptor {
   return (config) => {
-    const method = (config.method || 'GET').toUpperCase();
+    const method = String(config.method || 'GET').toUpperCase();
     const needBody = method !== 'GET' && method !== 'HEAD';
-    const headers: Record<string, any> = { ...(config.headers as any) };
+    const headers: Record<string, string> = { ...(config.headers || {}) };
     if (needBody && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }
-    return { ...config, headers } as any;
+    return { ...config, headers };
   };
 }
 
@@ -22,14 +22,14 @@ export function jsonContentType(): IRequestInterceptorAxios {
 export function acceptLanguage(
   getLocale: StringProvider,
   header = 'Accept-Language'
-): IRequestInterceptorAxios {
+): HttpInterceptor {
   return async (config) => {
     const locale = await getLocale();
     if (locale) {
-      const headers: Record<string, any> = { ...(config.headers as any) };
+      const headers: Record<string, string> = { ...(config.headers || {}) };
       headers[header] = String(locale);
-      return { ...config, headers } as any;
+      return { ...config, headers };
     }
-    return config as any;
+    return config;
   };
 }

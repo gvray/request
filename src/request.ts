@@ -1,31 +1,35 @@
 import RequestClient from './core/RequestClient';
-import { IRequestOptions, IRequestOptionsWithResponse, RequestResult } from './types';
-import type { AxiosResponse } from 'axios';
+import type {
+  HttpRequestOptions,
+  HttpRequestOptionsWithResponse,
+  HttpResult,
+  HttpResponse,
+} from './types';
 
 export const getClient = () => {
   return RequestClient.requestClient;
 };
 
-export function request<T = any>(
+export function request<T = unknown>(
   url: string,
-  opts: IRequestOptionsWithResponse
-): Promise<AxiosResponse<T>>;
-export function request<T = any>(url: string, opts?: IRequestOptions): Promise<T>;
-export function request<T = any>(url: string, opts: IRequestOptions = { method: 'GET' }) {
+  opts: HttpRequestOptionsWithResponse
+): Promise<HttpResponse<T>>;
+export function request<T = unknown>(url: string, opts?: HttpRequestOptions): Promise<T>;
+export function request<T = unknown>(url: string, opts: HttpRequestOptions = { method: 'GET' }) {
   const client = getClient();
   if (!client) throw new Error('Request client not initialized');
   return client.request<T>(url, opts);
 }
 
-export const requestSafe = async <T = any>(
+export const requestSafe = async <T = unknown>(
   url: string,
-  opts: IRequestOptions = { method: 'GET' }
-): Promise<RequestResult<T>> => {
+  opts: HttpRequestOptions = { method: 'GET' }
+): Promise<HttpResult<T>> => {
   try {
     const res = await request(url, opts);
-    const getResponse = (opts as IRequestOptions)?.getResponse === true;
+    const getResponse = opts?.getResponse === true;
     if (getResponse) {
-      const response = res as unknown as AxiosResponse<T>;
+      const response = res as unknown as HttpResponse<T>;
       return { data: response.data, response };
     }
     return { data: res as T };

@@ -11,6 +11,7 @@ const navItems = [
   { href: '/timeout', label: 'Timeout', icon: '◷' },
   { href: '/cache', label: 'Cache', icon: '◉' },
   { href: '/logging', label: 'Logging', icon: '▤' },
+  { href: '/fetch', label: 'Fetch Engine', icon: '⇄' },
 ]
 
 export function Nav() {

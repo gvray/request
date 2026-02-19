@@ -3,10 +3,18 @@ import {
   ErrorShowType,
   type BizError,
   type ErrorConfig,
-  type IRequestOptions,
+  type HttpRequestOptions,
 } from './types';
 
-export const errorConfig: ErrorConfig = {
+interface ErrorThrowerPayload {
+  success?: boolean;
+  data?: unknown;
+  code?: number;
+  message?: string;
+  showType?: ErrorShowType;
+}
+
+export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
   // When the response data "success" is false, throw an error for the errorHandler to handle.
   errorThrower: (res) => {
     const { success, data, code, message, showType } = res;
@@ -22,7 +30,7 @@ export const errorConfig: ErrorConfig = {
   // Accept errors thrown by errorThrower.
   errorHandler: (
     error: any,
-    opts: IRequestOptions,
+    opts: HttpRequestOptions,
     feedBack?: (errorInfo: ErrorFeedInfo) => void
   ) => {
     if (opts?.skipErrorHandler) throw error;
@@ -116,12 +124,12 @@ export const errorConfig: ErrorConfig = {
       if (feedBack) {
         feedBack({
           showType: ErrorShowType.ERROR_MESSAGE,
-          errorType: 'AxiosError',
+          errorType: 'ResponseError',
           message,
           error,
         });
       } else {
-        console.error('[Request] AxiosError:', message, error);
+        console.error('[Request] ResponseError:', message, error);
       }
     } else if (error.request) {
       // The request was successfully sent, but no response was received.

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { jsonContentType, acceptLanguage } from '../../src/interceptor/headers';
-import type { IRequestOptions } from '../../src/types';
+import type { HttpRequestOptions } from '../../src/types';
 
 describe('jsonContentType', () => {
   it('should add Content-Type header for POST request', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'POST',
       headers: {},
@@ -20,7 +20,7 @@ describe('jsonContentType', () => {
   it('should add Content-Type header for PUT request', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'PUT',
       headers: {},
@@ -34,7 +34,7 @@ describe('jsonContentType', () => {
   it('should add Content-Type header for PATCH request', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'PATCH',
       headers: {},
@@ -48,7 +48,7 @@ describe('jsonContentType', () => {
   it('should add Content-Type header for DELETE request', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'DELETE',
       headers: {},
@@ -62,7 +62,7 @@ describe('jsonContentType', () => {
   it('should NOT add Content-Type header for GET request', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -76,7 +76,7 @@ describe('jsonContentType', () => {
   it('should NOT add Content-Type header for HEAD request', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'HEAD',
       headers: {},
@@ -90,7 +90,7 @@ describe('jsonContentType', () => {
   it('should NOT override existing Content-Type header', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'POST',
       headers: {
@@ -106,7 +106,7 @@ describe('jsonContentType', () => {
   it('should handle lowercase method', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'post',
       headers: {},
@@ -120,7 +120,7 @@ describe('jsonContentType', () => {
   it('should default to GET when method is not specified', async () => {
     const interceptor = jsonContentType();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -136,7 +136,7 @@ describe('acceptLanguage', () => {
     const getLocale = vi.fn().mockResolvedValue('zh-CN');
     const interceptor = acceptLanguage(getLocale);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -151,7 +151,7 @@ describe('acceptLanguage', () => {
     const getLocale = vi.fn().mockResolvedValue('en-US');
     const interceptor = acceptLanguage(getLocale, 'X-Locale');
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -165,7 +165,7 @@ describe('acceptLanguage', () => {
     const getLocale = vi.fn().mockResolvedValue(null);
     const interceptor = acceptLanguage(getLocale);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -179,7 +179,7 @@ describe('acceptLanguage', () => {
     const getLocale = vi.fn().mockResolvedValue(undefined);
     const interceptor = acceptLanguage(getLocale);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };
@@ -193,7 +193,7 @@ describe('acceptLanguage', () => {
     const getLocale = vi.fn().mockResolvedValue('fr-FR');
     const interceptor = acceptLanguage(getLocale);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {
         'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ describe('acceptLanguage', () => {
     const getLocale = vi.fn().mockReturnValue('de-DE');
     const interceptor = acceptLanguage(getLocale);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       headers: {},
     };

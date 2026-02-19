@@ -1,7 +1,7 @@
 export * from './types';
 export { RequestClient, createClient, createRequest } from './client';
 export { request, getClient, requestSafe } from './request';
-export type { RequestResult } from './types';
+export type { HttpResult } from './types';
 export { errorConfig } from './requestErrorConfig';
 export * as interceptors from './interceptor';
 
@@ -13,4 +13,3 @@ export * from './interceptor/retry';
 export * from './interceptor/timeout';
 export * from './interceptor/cache';
 export * from './interceptor/logging';
-

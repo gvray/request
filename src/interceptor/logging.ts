@@ -1,10 +1,9 @@
 import type {
-  IRequestInterceptorAxios,
-  IErrorInterceptor,
-  IResponseInterceptor,
-  IRequestOptions,
+  HttpInterceptor,
+  HttpErrorInterceptor,
+  HttpResponseInterceptor,
+  HttpError,
 } from '../types';
-import type { AxiosError, AxiosResponse } from 'axios';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none';
 
@@ -49,8 +48,8 @@ function shouldLog(currentLevel: LogLevel, targetLevel: LogLevel): boolean {
  * 记录请求和响应的详细信息
  */
 export function createLoggingInterceptor(options: LoggingOptions = {}): {
-  request: IRequestInterceptorAxios;
-  response: [IResponseInterceptor, IErrorInterceptor];
+  request: HttpInterceptor;
+  response: [HttpResponseInterceptor, HttpErrorInterceptor];
 } {
   const {
     level = 'info',
@@ -69,31 +68,31 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
     logFn(...args);
   };
 
-  const requestInterceptor: IRequestInterceptorAxios = (config) => {
+  const requestInterceptor: HttpInterceptor = (config) => {
     if (logRequest) {
-      const method = ((config as any).method || 'GET').toUpperCase();
-      const url = (config as any).url || '';
+      const method = String(config.method || 'GET').toUpperCase();
+      const url = String(config.url || '');
 
       log('info', `[Request] ${method} ${url}`);
 
-      if (logRequestBody && (config as any).data) {
-        log('debug', '[Request Body]', (config as any).data);
+      if (logRequestBody && config.data) {
+        log('debug', '[Request Body]', config.data);
       }
     }
 
     // 记录请求开始时间
-    (config as any)[timestampKey] = Date.now();
+    (config as Record<string, unknown>)[timestampKey] = Date.now();
 
-    return config as any;
+    return config;
   };
 
-  const responseInterceptor: IResponseInterceptor = (response: AxiosResponse) => {
+  const responseInterceptor: HttpResponseInterceptor = (response) => {
     if (logResponse) {
-      const config = response.config as IRequestOptions & { [key: string]: any };
-      const method = (config.method || 'GET').toUpperCase();
-      const url = config.url || '';
+      const config = response.config;
+      const method = String(config.method || 'GET').toUpperCase();
+      const url = String(config.url || '');
       const status = response.status;
-      const startTime = config[timestampKey];
+      const startTime = (config as Record<string, unknown>)[timestampKey] as number | undefined;
       const duration = startTime ? `${Date.now() - startTime}ms` : 'N/A';
 
       log('info', `[Response] ${method} ${url} - ${status} (${duration})`);
@@ -106,20 +105,23 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
     return response;
   };
 
-  const errorInterceptor: IErrorInterceptor = (error: AxiosError) => {
+  const errorInterceptor: HttpErrorInterceptor = (err: unknown) => {
+    const error = err as HttpError;
     if (logError) {
-      const config = error.config as IRequestOptions & { [key: string]: any };
-      const method = (config?.method || 'GET').toUpperCase();
-      const url = config?.url || '';
+      const config = error.config;
+      const method = String(config?.method || 'GET').toUpperCase();
+      const url = String(config?.url || '');
       const status = error.response?.status || 'N/A';
-      const startTime = config?.[timestampKey];
+      const startTime = (config as Record<string, unknown> | undefined)?.[timestampKey] as
+        | number
+        | undefined;
       const duration = startTime ? `${Date.now() - startTime}ms` : 'N/A';
 
       log('error', `[Error] ${method} ${url} - ${status} (${duration})`);
       log('error', '[Error Details]', error.message);
     }
 
-    return Promise.reject(error);
+    return Promise.reject(err);
   };
 
   return {
@@ -132,8 +134,8 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
  * 简单日志拦截器（仅记录基本信息）
  */
 export function logging(): {
-  request: IRequestInterceptorAxios;
-  response: [IResponseInterceptor, IErrorInterceptor];
+  request: HttpInterceptor;
+  response: [HttpResponseInterceptor, HttpErrorInterceptor];
 } {
   return createLoggingInterceptor();
 }

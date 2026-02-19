@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createCacheInterceptor, cache, MemoryCacheStorage } from '../../src/interceptor/cache';
-import type { IRequestOptions } from '../../src/types';
-import type { AxiosResponse } from 'axios';
+import type { HttpRequestOptions, HttpResponse } from '../../src/types';
 
 describe('createCacheInterceptor', () => {
   beforeEach(() => {
@@ -25,7 +24,7 @@ describe('createCacheInterceptor', () => {
   it('should skip caching for non-GET requests by default', async () => {
     const { request } = createCacheInterceptor();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'POST',
       headers: {},
@@ -41,7 +40,7 @@ describe('createCacheInterceptor', () => {
       exclude: ['/api/no-cache'],
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/no-cache/data',
       method: 'GET',
       headers: {},
@@ -57,7 +56,7 @@ describe('createCacheInterceptor', () => {
       exclude: [/\/api\/live\/.*/],
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/live/stream',
       method: 'GET',
       headers: {},
@@ -78,7 +77,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() + 300000,
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -100,7 +99,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() + 300000,
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -125,7 +124,7 @@ describe('createCacheInterceptor', () => {
     };
     await storage.set(cacheKey, cacheEntry);
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -133,14 +132,17 @@ describe('createCacheInterceptor', () => {
 
     await request(config);
 
-    expect(onCacheHit).toHaveBeenCalledWith(cacheKey, expect.objectContaining({ data: { cached: true } }));
+    expect(onCacheHit).toHaveBeenCalledWith(
+      cacheKey,
+      expect.objectContaining({ data: { cached: true } })
+    );
   });
 
   it('should call onCacheMiss callback when cache is missed', async () => {
     const onCacheMiss = vi.fn();
     const { request } = createCacheInterceptor({ onCacheMiss });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -157,7 +159,7 @@ describe('createCacheInterceptor', () => {
     const onCacheMiss = vi.fn();
     const { request } = createCacheInterceptor({ keyGenerator, onCacheMiss });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -174,7 +176,7 @@ describe('createCacheInterceptor', () => {
     const [onResponse] = response;
 
     // First request - cache miss
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -187,12 +189,14 @@ describe('createCacheInterceptor', () => {
       data: { users: [] },
       status: 200,
       config: processedConfig,
-    } as AxiosResponse;
+    } as HttpResponse;
 
     await onResponse(mockResponse);
 
     // Verify data was cached
-    const cached = await storage.get((processedConfig as any)._cacheKey);
+    const cached = await storage.get(
+      (processedConfig as Record<string, unknown>)._cacheKey as string
+    );
     expect(cached).not.toBeNull();
     expect(cached?.data).toEqual({ users: [] });
   });
@@ -208,7 +212,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() + 300000,
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -231,7 +235,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() - 300000, // Already expired
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},

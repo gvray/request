@@ -1,8 +1,8 @@
-import type { IRequestInterceptorAxios } from '../types';
+import type { HttpInterceptor } from '../types';
 
 /**
- * 开启跨域携带 Cookie（axios 配置 withCredentials）
+ * 开启跨域携带 Cookie（配置 withCredentials）
  */
-export function withCredentials(): IRequestInterceptorAxios {
-  return (config) => ({ ...config, withCredentials: true }) as any;
+export function withCredentials(): HttpInterceptor {
+  return (config) => ({ ...config, withCredentials: true });
 }

@@ -1,27 +1,35 @@
-import { axiosAdapter, AxiosInstance } from '../adapters';
-import type { AxiosResponse } from 'axios';
-import {
+import { axiosAdapter, fetchAdapter } from '../adapters';
+import type {
+  HttpInstance,
+  HttpError,
+  Engine,
   ErrorConfig,
-  IRequestInterceptorTuple,
-  IRequestOptions,
-  IRequestOptionsWithResponse,
-  IResponseInterceptorTuple,
-  RequestConfig,
+  HttpRequestInterceptorTuple,
+  HttpRequestOptions,
+  HttpRequestOptionsWithResponse,
+  HttpResponseInterceptorTuple,
+  HttpConfig,
+  HttpResponse,
   RuntimeRequestConfig,
-  RequestOptions,
+  HttpOptions,
 } from '../types';
-import { wrapInterceptor } from './interceptor';
 import {
   bearerAuth,
   jsonContentType,
   acceptLanguage,
   withCredentials,
   createAuthRefreshInterceptor,
+  createRetryInterceptor,
 } from '../interceptor';
 
+function getAdapter(engine: Engine = 'axios') {
+  return engine === 'fetch' ? fetchAdapter : axiosAdapter;
+}
+
 class RequestClient {
-  constructor(options: RequestConfig) {
-    const { errorConfig, requestInterceptors, responseInterceptors, ...rest } = options;
+  constructor(options: HttpConfig) {
+    const { engine, errorConfig, requestInterceptors, responseInterceptors, ...rest } = options;
+    this.engine = engine || 'axios';
     this.requestOptions = rest;
     this.errorConfig = errorConfig || null;
     this.requestInterceptors = requestInterceptors || null;
@@ -29,24 +37,26 @@ class RequestClient {
     this.getRequestInstance(rest);
   }
   static requestClient: RequestClient | null = null;
-  private requestInstance: AxiosInstance | null = null;
-  private requestOptions: RequestOptions;
+  private engine: Engine;
+  private requestInstance: HttpInstance | null = null;
+  private requestOptions: HttpOptions;
   private errorConfig: ErrorConfig | null = null;
-  private requestInterceptors: IRequestInterceptorTuple[] | null = null;
-  private responseInterceptors: IResponseInterceptorTuple[] | null = null;
+  private requestInterceptors: HttpRequestInterceptorTuple[] | null = null;
+  private responseInterceptors: HttpResponseInterceptorTuple[] | null = null;
 
-  static getRequestClient(options: RequestConfig) {
+  static getRequestClient(options: HttpConfig) {
     if (RequestClient.requestClient) return RequestClient.requestClient;
     RequestClient.requestClient = new RequestClient(options);
     return RequestClient.requestClient;
   }
   private getRequestInstance(config: RuntimeRequestConfig) {
-    this.requestInstance = axiosAdapter.create(config);
+    const adapter = getAdapter(this.engine);
+    this.requestInstance = adapter.create(config);
 
     // Auto register built-in interceptors from preset
-    const preset = (this.requestOptions as any)?.preset;
-    const builtinRequestInterceptors: IRequestInterceptorTuple[] = [];
-    const builtinResponseInterceptors: IResponseInterceptorTuple[] = [];
+    const preset = (this.requestOptions as HttpConfig)?.preset;
+    const builtinRequestInterceptors: HttpRequestInterceptorTuple[] = [];
+    const builtinResponseInterceptors: HttpResponseInterceptorTuple[] = [];
 
     if (preset?.bearerAuth) {
       const { getToken, header, scheme, exclude } = preset.bearerAuth;
@@ -63,23 +73,38 @@ class RequestClient {
       builtinRequestInterceptors.push(withCredentials());
     }
     if (preset?.authRefresh) {
-      builtinResponseInterceptors.push(createAuthRefreshInterceptor(preset.authRefresh));
+      builtinResponseInterceptors.push(
+        createAuthRefreshInterceptor(this.requestInstance!, preset.authRefresh)
+      );
+    }
+    if (preset?.retry) {
+      builtinResponseInterceptors.push(createRetryInterceptor(this.requestInstance!, preset.retry));
     }
 
     // register builtin first, then user interceptors (user can override behaviors by ordering)
     builtinRequestInterceptors.forEach((interceptor) => {
-      this.requestInstance?.interceptors.request.use(wrapInterceptor(interceptor as any));
+      if (Array.isArray(interceptor)) {
+        const [success, fail] = interceptor;
+        this.requestInstance?.interceptors.request.use(success, fail);
+      } else {
+        this.requestInstance?.interceptors.request.use(interceptor);
+      }
     });
     builtinResponseInterceptors.forEach((interceptor) => {
-      this.requestInstance?.interceptors.response.use(interceptor as any);
+      if (Array.isArray(interceptor)) {
+        const [success, fail] = interceptor;
+        this.requestInstance?.interceptors.response.use(success, fail);
+      } else {
+        this.requestInstance?.interceptors.response.use(interceptor);
+      }
     });
 
     this.requestInterceptors?.forEach((interceptor) => {
       if (Array.isArray(interceptor)) {
         const [success, fail] = interceptor;
-        return this.requestInstance?.interceptors.request.use(wrapInterceptor(success), fail);
+        return this.requestInstance?.interceptors.request.use(success, fail);
       }
-      return this.requestInstance?.interceptors.request.use(wrapInterceptor(interceptor));
+      return this.requestInstance?.interceptors.request.use(interceptor);
     });
 
     this.responseInterceptors?.forEach((interceptor) => {
@@ -92,8 +117,8 @@ class RequestClient {
     });
 
     // 当响应的数据 success 是 false 的时候，抛出 error 以供 errorHandler 处理。
-    this.requestInstance?.interceptors.response.use((response) => {
-      const { data } = response;
+    this.requestInstance?.interceptors.response.use((response: HttpResponse) => {
+      const data = response.data as Record<string, unknown> | undefined;
       if (data?.success === false && this.errorConfig?.errorThrower) {
         this.errorConfig.errorThrower(data);
       }
@@ -103,12 +128,12 @@ class RequestClient {
     return this.requestInstance;
   }
 
-  public request<T = any>(
+  public request<T = unknown>(
     url: string,
-    opts: IRequestOptionsWithResponse
-  ): Promise<AxiosResponse<T>>;
-  public request<T = any>(url: string, opts?: RequestOptions): Promise<T>;
-  public request<T = any>(url: string, opts?: RequestOptions): Promise<T | AxiosResponse<T>> {
+    opts: HttpRequestOptionsWithResponse
+  ): Promise<HttpResponse<T>>;
+  public request<T = unknown>(url: string, opts?: HttpOptions): Promise<T>;
+  public request<T = unknown>(url: string, opts?: HttpOptions): Promise<T | HttpResponse<T>> {
     const requestInstance = this.requestInstance;
 
     if (!requestInstance) throw new Error('Request instance is not initialized');
@@ -122,9 +147,9 @@ class RequestClient {
     const requestInterceptorsToEject = requestInterceptors?.map((interceptor) => {
       if (Array.isArray(interceptor)) {
         const [success, fail] = interceptor;
-        return requestInstance.interceptors.request.use(wrapInterceptor(success), fail);
+        return requestInstance.interceptors.request.use(success, fail);
       }
-      return requestInstance.interceptors.request.use(wrapInterceptor(interceptor));
+      return requestInstance.interceptors.request.use(interceptor);
     });
 
     const responseInterceptorsToEject = responseInterceptors?.map((interceptor) => {
@@ -136,9 +161,9 @@ class RequestClient {
       }
     });
 
-    return new Promise<T | AxiosResponse<T>>((resolve, reject) => {
+    return new Promise<T | HttpResponse<T>>((resolve, reject) => {
       requestInstance
-        .request<T>({ ...opts, url })
+        .request({ ...opts, url })
         .then((res) => {
           requestInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.request.eject(interceptor);
@@ -146,9 +171,9 @@ class RequestClient {
           responseInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.response.eject(interceptor);
           });
-          resolve(getResponse ? res : res.data);
+          resolve(getResponse ? (res as HttpResponse<T>) : (res as HttpResponse<T>).data);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           requestInterceptorsToEject?.forEach((interceptor) => {
             requestInstance.interceptors.request.eject(interceptor);
           });
@@ -159,7 +184,7 @@ class RequestClient {
             const handler = this.errorConfig?.errorHandler;
             const feedBack = this.errorConfig?.errorFeedBack;
             if (handler) {
-              handler(error, opts as IRequestOptions, feedBack);
+              handler(error as HttpError, opts as HttpRequestOptions, feedBack);
             }
           } catch (e) {
             reject(e);

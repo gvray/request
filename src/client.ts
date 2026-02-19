@@ -1,11 +1,15 @@
 import RequestClient from './core/RequestClient';
-import type { AxiosResponse } from 'axios';
-import type { RequestConfig, IRequestOptions, IRequestOptionsWithResponse } from './types';
+import type {
+  HttpConfig,
+  HttpRequestOptions,
+  HttpRequestOptionsWithResponse,
+  HttpResponse,
+} from './types';
 
 /**
  * Initialize the global request client. After calling this, `request` can be used directly.
  */
-const createClient = (options: RequestConfig): void => {
+const createClient = (options: HttpConfig): void => {
   RequestClient.getRequestClient(options);
 };
 
@@ -13,11 +17,14 @@ const createClient = (options: RequestConfig): void => {
  * Create an independent request function with its own configuration.
  * Useful for multi-token or multi-baseURL scenarios.
  */
-const createRequest = (options: RequestConfig) => {
+const createRequest = (options: HttpConfig) => {
   const client = new RequestClient(options);
-  function req<T = any>(url: string, opts: IRequestOptionsWithResponse): Promise<AxiosResponse<T>>;
-  function req<T = any>(url: string, opts?: IRequestOptions): Promise<T>;
-  function req<T = any>(url: string, opts: IRequestOptions = { method: 'GET' }) {
+  function req<T = unknown>(
+    url: string,
+    opts: HttpRequestOptionsWithResponse
+  ): Promise<HttpResponse<T>>;
+  function req<T = unknown>(url: string, opts?: HttpRequestOptions): Promise<T>;
+  function req<T = unknown>(url: string, opts: HttpRequestOptions = { method: 'GET' }) {
     return client.request<T>(url, opts);
   }
   return req;

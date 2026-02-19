@@ -1,11 +1,13 @@
 import type {
-  IRequestInterceptorAxios,
+  HttpInterceptor,
+  HttpInstance,
   WithPromise,
-  IResponseInterceptor,
-  IErrorInterceptor,
+  HttpResponseInterceptor,
+  HttpErrorInterceptor,
+  HttpError,
+  HttpOptions,
+  HttpResponse,
 } from '../types';
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { axiosAdapter } from '../adapters';
 
 // 返回字符串或异步字符串的提供者类型
 export type StringProvider = () => WithPromise<string | null | undefined>;
@@ -17,15 +19,15 @@ export function bearerAuth(
   getToken: StringProvider,
   header = 'Authorization',
   scheme = 'Bearer',
-  exclude?: Array<string | RegExp> | ((url?: string, options?: any) => boolean)
-): IRequestInterceptorAxios {
+  exclude?: Array<string | RegExp> | ((url?: string, options?: Record<string, unknown>) => boolean)
+): HttpInterceptor {
   return async (config) => {
-    const url = (config as any).url as string | undefined;
+    const url = config.url as string | undefined;
 
     // 判断是否需要跳过设置 Authorization
     let shouldExclude = false;
     if (typeof exclude === 'function') {
-      shouldExclude = exclude(url, config as any) === true;
+      shouldExclude = exclude(url, config as Record<string, unknown>) === true;
     } else if (Array.isArray(exclude) && url) {
       shouldExclude = exclude.some((rule) =>
         typeof rule === 'string' ? url.includes(rule) : !!url.match(rule as RegExp)
@@ -33,15 +35,15 @@ export function bearerAuth(
     }
 
     // 运行时按请求配置跳过（例如登录接口传入 skipAuth: true）
-    if ((config as any).skipAuth === true || shouldExclude) return config as any;
+    if (config.skipAuth === true || shouldExclude) return config;
 
     const token = await getToken();
     if (token) {
-      const headers: Record<string, any> = { ...(config.headers as any) };
+      const headers: Record<string, string> = { ...(config.headers || {}) };
       headers[header] = `${scheme} ${token}`;
-      return { ...config, headers } as any;
+      return { ...config, headers };
     }
-    return config as any;
+    return config;
   };
 }
 
@@ -66,10 +68,10 @@ type RefreshState = 'idle' | 'refreshing' | 'failed';
 
 // 等待队列中的请求项
 interface PendingRequest {
-  config: AxiosRequestConfig & { _retry?: boolean };
-  error: AxiosError;
-  resolve: (value: AxiosResponse | PromiseLike<AxiosResponse>) => void;
-  reject: (reason: AxiosError) => void;
+  config: HttpOptions & { _retry?: boolean };
+  error: HttpError;
+  resolve: (value: HttpResponse | PromiseLike<HttpResponse>) => void;
+  reject: (reason: HttpError) => void;
 }
 
 /**
@@ -84,8 +86,9 @@ interface PendingRequest {
  * 使用方式：在客户端的 responseInterceptors 中传入返回的 tuple。
  */
 export function createAuthRefreshInterceptor(
+  instance: HttpInstance,
   options: AuthRefreshOptions
-): [IResponseInterceptor, IErrorInterceptor] {
+): [HttpResponseInterceptor, HttpErrorInterceptor] {
   const {
     refreshToken,
     setToken,
@@ -100,8 +103,7 @@ export function createAuthRefreshInterceptor(
   let refreshState: RefreshState = 'idle';
   // 等待队列
   let pendingQueue: PendingRequest[] = [];
-  // 当前刷新的 Promise（用于取消/调试等场景，保留用于未来扩展）
-  // @ts-ignore - intentionally unused, kept for future debugging/cancellation
+  // 当前刷新的 Promise（保留用于未来扩展）
   let refreshPromise: Promise<string | null | undefined> | null = null; // eslint-disable-line
   // 防止 loginRedirect 被多次调用
   let loginRedirectCalled = false;
@@ -109,7 +111,7 @@ export function createAuthRefreshInterceptor(
   /**
    * 处理等待队列中的所有请求
    */
-  const processQueue = async (token: string | null | undefined, error?: AxiosError) => {
+  const processQueue = async (token: string | null | undefined, error?: HttpError) => {
     const queue = [...pendingQueue];
     pendingQueue = [];
 
@@ -134,15 +136,15 @@ export function createAuthRefreshInterceptor(
         headers[header] = `${scheme} ${token}`;
         pending.config.headers = headers;
 
-        const response = await axiosAdapter.request<unknown>({
+        // Retry through the engine instance (respects engine choice and interceptor chain)
+        const retryConfig: HttpOptions = {
           ...(pending.config as Record<string, unknown>),
-          getResponse: true,
           skipAuth: true,
-        } as AxiosRequestConfig) as AxiosResponse;
-
+        };
+        const response = await instance.request(retryConfig);
         pending.resolve(response);
       } catch (retryError) {
-        pending.reject(retryError as AxiosError);
+        pending.reject(retryError as HttpError);
       }
     }
   };
@@ -192,21 +194,22 @@ export function createAuthRefreshInterceptor(
     }, 100);
   };
 
-  const onResponse: IResponseInterceptor = (response) => response;
+  const onResponse: HttpResponseInterceptor = (response) => response;
 
-  const onError: IErrorInterceptor = (error: AxiosError) => {
+  const onError: HttpErrorInterceptor = (err: unknown) => {
+    const error = err as HttpError;
     const status = error.response?.status;
-    const originalConfig = (error.config || {}) as AxiosRequestConfig & { _retry?: boolean };
+    const originalConfig = (error.config || {}) as HttpOptions & { _retry?: boolean };
 
     // 非目标状态码，直接拒绝
     if (!status || !statuses.includes(status)) {
-      return Promise.reject(error) as Promise<AxiosError>;
+      return Promise.reject(error) as Promise<HttpError>;
     }
 
     // 已经是重试过的请求，说明新 token 也失效了，放弃重试
     if (originalConfig._retry) {
       safeLoginRedirect();
-      return Promise.reject(error) as Promise<AxiosError>;
+      return Promise.reject(error) as Promise<HttpError>;
     }
 
     // 标记此请求已经尝试过刷新
@@ -214,11 +217,11 @@ export function createAuthRefreshInterceptor(
 
     // 如果刷新已经失败，直接拒绝（防止在失败状态下继续堆积请求）
     if (refreshState === 'failed') {
-      return Promise.reject(error) as Promise<AxiosError>;
+      return Promise.reject(error) as Promise<HttpError>;
     }
 
     // 返回一个 Promise，将请求加入队列或立即处理
-    return new Promise<AxiosResponse>((resolve, reject) => {
+    return new Promise<HttpResponse>((resolve, reject) => {
       // 将请求加入等待队列
       const pendingRequest: PendingRequest = {
         config: originalConfig,
@@ -267,7 +270,7 @@ export function createAuthRefreshInterceptor(
           // 错误已通过 processQueue 传递给各个请求的 reject
           return null;
         });
-    }) as Promise<AxiosResponse>;
+    }) as Promise<HttpResponse>;
   };
 
   return [onResponse, onError];

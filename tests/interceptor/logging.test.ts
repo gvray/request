@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createLoggingInterceptor, logging } from '../../src/interceptor/logging';
-import type { IRequestOptions } from '../../src/types';
-import type { AxiosResponse, AxiosError } from 'axios';
+import type { HttpRequestOptions, HttpResponse, HttpError } from '../../src/types';
 
 describe('createLoggingInterceptor', () => {
   beforeEach(() => {
@@ -26,7 +25,7 @@ describe('createLoggingInterceptor', () => {
 
     const { request } = createLoggingInterceptor({ logger: mockLogger });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -53,7 +52,7 @@ describe('createLoggingInterceptor', () => {
       level: 'debug',
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'POST',
       headers: {},
@@ -78,7 +77,7 @@ describe('createLoggingInterceptor', () => {
       logRequestBody: false,
     });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'POST',
       headers: {},
@@ -101,7 +100,7 @@ describe('createLoggingInterceptor', () => {
     const { request, response } = createLoggingInterceptor({ logger: mockLogger });
     const [responseInterceptor] = response;
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -113,7 +112,7 @@ describe('createLoggingInterceptor', () => {
       data: { users: [] },
       status: 200,
       config,
-    } as AxiosResponse;
+    } as HttpResponse;
 
     await responseInterceptor(mockResponse);
 
@@ -136,7 +135,7 @@ describe('createLoggingInterceptor', () => {
     });
     const [responseInterceptor] = response;
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -148,7 +147,7 @@ describe('createLoggingInterceptor', () => {
       data: { users: ['user1', 'user2'] },
       status: 200,
       config,
-    } as AxiosResponse;
+    } as HttpResponse;
 
     await responseInterceptor(mockResponse);
 
@@ -175,7 +174,7 @@ describe('createLoggingInterceptor', () => {
       response: {
         status: 500,
       },
-    } as AxiosError;
+    } as unknown as HttpError;
 
     await expect(errorInterceptor(mockError)).rejects.toBe(mockError);
 
@@ -193,7 +192,7 @@ describe('createLoggingInterceptor', () => {
 
     const { request } = createLoggingInterceptor({ logger: mockLogger, level: 'none' });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -215,7 +214,7 @@ describe('createLoggingInterceptor', () => {
 
     const { request } = createLoggingInterceptor({ logger: mockLogger, logRequest: false });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -237,7 +236,7 @@ describe('createLoggingInterceptor', () => {
     const { response } = createLoggingInterceptor({ logger: mockLogger, logResponse: false });
     const [responseInterceptor] = response;
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -247,7 +246,7 @@ describe('createLoggingInterceptor', () => {
       data: { users: [] },
       status: 200,
       config,
-    } as AxiosResponse;
+    } as HttpResponse;
 
     await responseInterceptor(mockResponse);
 
@@ -271,7 +270,7 @@ describe('createLoggingInterceptor', () => {
         url: '/api/users',
         method: 'GET',
       },
-    } as AxiosError;
+    } as unknown as HttpError;
 
     await expect(errorInterceptor(mockError)).rejects.toBe(mockError);
 
@@ -281,7 +280,7 @@ describe('createLoggingInterceptor', () => {
   it('should record request start time', async () => {
     const { request } = createLoggingInterceptor();
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -289,14 +288,14 @@ describe('createLoggingInterceptor', () => {
 
     const result = await request(config);
 
-    expect((result as any)._requestStartTime).toBeDefined();
-    expect(typeof (result as any)._requestStartTime).toBe('number');
+    expect((result as Record<string, unknown>)._requestStartTime).toBeDefined();
+    expect(typeof (result as Record<string, unknown>)._requestStartTime).toBe('number');
   });
 
   it('should use custom timestamp key', async () => {
     const { request } = createLoggingInterceptor({ timestampKey: '_customTime' });
 
-    const config: IRequestOptions = {
+    const config: HttpRequestOptions = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -304,8 +303,8 @@ describe('createLoggingInterceptor', () => {
 
     const result = await request(config);
 
-    expect((result as any)._customTime).toBeDefined();
-    expect((result as any)._requestStartTime).toBeUndefined();
+    expect((result as Record<string, unknown>)._customTime).toBeDefined();
+    expect((result as Record<string, unknown>)._requestStartTime).toBeUndefined();
   });
 });
 

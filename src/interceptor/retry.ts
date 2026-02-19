@@ -1,6 +1,10 @@
-import type { IErrorInterceptor, IResponseInterceptor } from '../types';
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-import { axiosAdapter } from '../adapters';
+import type {
+  HttpErrorInterceptor,
+  HttpResponseInterceptor,
+  HttpError,
+  HttpOptions,
+  HttpInstance,
+} from '../types';
 
 export type RetryOptions = {
   // 最大重试次数（默认 3）
@@ -12,22 +16,22 @@ export type RetryOptions = {
   // 需要重试的状态码（默认 [408, 429, 500, 502, 503, 504]）
   retryableStatuses?: number[];
   // 需要重试的错误类型（默认网络错误和超时）
-  retryCondition?: (error: AxiosError) => boolean;
+  retryCondition?: (error: HttpError) => boolean;
   // 重试回调（可用于日志记录）
-  onRetry?: (retryCount: number, error: AxiosError, config: AxiosRequestConfig) => void;
+  onRetry?: (retryCount: number, error: HttpError, config: HttpOptions) => void;
 };
 
 const DEFAULT_RETRYABLE_STATUSES = [408, 429, 500, 502, 503, 504];
 
-function isNetworkError(error: AxiosError): boolean {
+function isNetworkError(error: HttpError): boolean {
   return !error.response && Boolean(error.code) && error.code !== 'ECONNABORTED';
 }
 
-function isTimeoutError(error: AxiosError): boolean {
+function isTimeoutError(error: HttpError): boolean {
   return error.code === 'ECONNABORTED' || error.message?.includes('timeout');
 }
 
-function defaultRetryCondition(error: AxiosError, retryableStatuses: number[]): boolean {
+function defaultRetryCondition(error: HttpError, retryableStatuses: number[]): boolean {
   if (isNetworkError(error) || isTimeoutError(error)) {
     return true;
   }
@@ -44,8 +48,9 @@ function sleep(ms: number): Promise<void> {
  * 在请求失败时根据配置自动重试
  */
 export function createRetryInterceptor(
+  instance: HttpInstance,
   options: RetryOptions = {}
-): [IResponseInterceptor, IErrorInterceptor] {
+): [HttpResponseInterceptor, HttpErrorInterceptor] {
   const {
     maxRetries = 3,
     retryDelay = 1000,
@@ -55,12 +60,13 @@ export function createRetryInterceptor(
     onRetry,
   } = options;
 
-  const onResponse: IResponseInterceptor = (response) => response;
+  const onResponse: HttpResponseInterceptor = (response) => response;
 
-  const onError: IErrorInterceptor = async (error: AxiosError) => {
-    const config = error.config as AxiosRequestConfig & { _retryCount?: number };
+  const onError: HttpErrorInterceptor = async (err: unknown) => {
+    const error = err as HttpError;
+    const config = (error.config || {}) as HttpOptions & { _retryCount?: number };
 
-    if (!config) {
+    if (!error.config) {
       return Promise.reject(error);
     }
 
@@ -89,10 +95,8 @@ export function createRetryInterceptor(
 
     await sleep(delay);
 
-    return axiosAdapter.request({
-      ...config,
-      getResponse: true,
-    } as any);
+    // Retry through the engine instance (respects engine choice and interceptor chain)
+    return instance.request(config);
   };
 
   return [onResponse, onError];
@@ -101,6 +105,9 @@ export function createRetryInterceptor(
 /**
  * 简单的重试拦截器（使用默认配置）
  */
-export function retry(maxRetries = 3): [IResponseInterceptor, IErrorInterceptor] {
-  return createRetryInterceptor({ maxRetries });
+export function retry(
+  instance: HttpInstance,
+  maxRetries = 3
+): [HttpResponseInterceptor, HttpErrorInterceptor] {
+  return createRetryInterceptor(instance, { maxRetries });
 }
