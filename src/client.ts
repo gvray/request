@@ -1,5 +1,6 @@
 import RequestClient from './core/RequestClient';
 import type {
+  ClientConfig,
   HttpConfig,
   HttpRequestOptions,
   HttpRequestOptionsWithResponse,
@@ -9,7 +10,7 @@ import type {
 /**
  * Initialize the global request client. After calling this, `request` can be used directly.
  */
-const createClient = (options: HttpConfig): void => {
+const createClient = (options: ClientConfig): void => {
   RequestClient.getRequestClient(options);
 };
 
@@ -19,12 +20,12 @@ const createClient = (options: HttpConfig): void => {
  */
 const createRequest = (options: HttpConfig) => {
   const client = new RequestClient(options);
-  function req<T = unknown>(
+  function req<T = any>(
     url: string,
     opts: HttpRequestOptionsWithResponse
   ): Promise<HttpResponse<T>>;
-  function req<T = unknown>(url: string, opts?: HttpRequestOptions): Promise<T>;
-  function req<T = unknown>(url: string, opts: HttpRequestOptions = { method: 'GET' }) {
+  function req<T = any>(url: string, opts?: HttpRequestOptions): Promise<T>;
+  function req<T = any>(url: string, opts: HttpRequestOptions = { method: 'GET' }) {
     return client.request<T>(url, opts);
   }
   return req;

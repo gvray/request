@@ -5,8 +5,9 @@
 
 import { Fetch } from './Fetch';
 import type { FetchRequestConfig, FetchInstance } from './types';
+import type { HttpOptions } from '../../types';
 
-export function createInstance(config: FetchRequestConfig = {}): FetchInstance {
+export function createInstance(config: HttpOptions = {}): FetchInstance {
   const context = new Fetch(config);
 
   // Create the callable instance function (mirrors axios behavior)

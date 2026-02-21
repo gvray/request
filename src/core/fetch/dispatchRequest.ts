@@ -4,8 +4,8 @@
  * transform, response parsing, and status validation (settle).
  */
 
-import { FetchError } from './FetchError';
 import { CanceledError } from './CanceledError';
+import { FetchError } from './FetchError';
 import { buildFullPath } from './buildFullPath';
 import { buildURL } from './buildURL';
 import { mergeConfig } from './mergeConfig';
@@ -23,7 +23,7 @@ import type {
 function headersToRecord(headers: Headers): Record<string, string> {
   const obj: Record<string, string> = {};
   headers.forEach((v, k) => {
-    obj[k] = v;
+    obj[k] = String(v);
   });
   return obj;
 }
@@ -63,7 +63,7 @@ function applyTransformResponse(
 
 function toRequestInit(config: FetchRequestConfig): RequestInit {
   const method = (config.method || 'GET').toUpperCase();
-  const headers: Record<string, string> = { ...(config.headers || {}) };
+  const headers: Record<string, string> = { ...(config.headers || {}) } as Record<string, string>;
 
   let body: BodyInit | null = null;
   let data: unknown = config.data;
@@ -109,7 +109,18 @@ async function parseResponseBody<T>(
     if (responseType === 'text') return (await res.text()) as T;
     if (responseType === 'blob') return (await res.blob()) as T;
     if (responseType === 'arraybuffer') return (await res.arrayBuffer()) as T;
+    if (responseType === 'formdata') return (await res.formData()) as T;
 
+    // 'document' 和 'stream' 不支持，降级为 json/text
+    if (responseType === 'document' || responseType === 'stream') {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        return (await res.json()) as T;
+      }
+      return (await res.text()) as T;
+    }
+
+    // 默认 json
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       return (await res.json()) as T;

@@ -9,6 +9,7 @@ import { dispatchRequest } from './dispatchRequest';
 import { buildFullPath } from './buildFullPath';
 import { buildURL } from './buildURL';
 import type { FetchRequestConfig, FetchResponse } from './types';
+import type { HttpOptions } from '../../types';
 
 export class Fetch {
   defaults: FetchRequestConfig;
@@ -17,8 +18,8 @@ export class Fetch {
     response: InterceptorManager<FetchResponse>;
   };
 
-  constructor(config: FetchRequestConfig = {}) {
-    this.defaults = config;
+  constructor(config: HttpOptions = {}) {
+    this.defaults = config as FetchRequestConfig;
     this.interceptors = {
       request: new InterceptorManager<FetchRequestConfig>(),
       response: new InterceptorManager<FetchResponse>(),

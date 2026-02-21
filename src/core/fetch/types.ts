@@ -7,6 +7,7 @@
  */
 
 import type { InterceptorManager } from './InterceptorManager';
+import type { HttpHeaders } from '../../types';
 
 // ─── Params ──────────────────────────────────────────────────────────────────
 
@@ -44,12 +45,12 @@ export interface FetchRequestConfig<D = unknown> {
   url?: string;
   method?: FetchMethod | (string & NonNullable<unknown>);
   baseURL?: string;
-  headers?: Record<string, string>;
+  headers?: HttpHeaders;
   params?: Params;
   data?: D;
   timeout?: number;
   withCredentials?: boolean;
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer' | 'formdata' | 'document' | 'stream';
   signal?: AbortSignal;
   timeoutErrorMessage?: string;
   validateStatus?: ((status: number) => boolean) | null;

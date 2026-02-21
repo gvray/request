@@ -142,6 +142,7 @@ class RequestClient {
       getResponse = false,
       requestInterceptors,
       responseInterceptors,
+      // skipErrorHandler 和 skipAuth 通过 opts 对象传递给拦截器，不需要在这里解构
     } = opts || this.requestOptions || {};
 
     const requestInterceptorsToEject = requestInterceptors?.map((interceptor) => {

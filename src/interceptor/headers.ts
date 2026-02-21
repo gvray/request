@@ -1,4 +1,4 @@
-import type { HttpInterceptor } from '../types';
+import type { HttpInterceptor, HttpHeaders } from '../types';
 import type { StringProvider } from './auth';
 
 /**
@@ -8,10 +8,13 @@ export function jsonContentType(): HttpInterceptor {
   return (config) => {
     const method = String(config.method || 'GET').toUpperCase();
     const needBody = method !== 'GET' && method !== 'HEAD';
-    const headers: Record<string, string> = { ...(config.headers || {}) };
+
+    const headers: HttpHeaders = { ...(config.headers || {}) };
+
     if (needBody && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }
+
     return { ...config, headers };
   };
 }
@@ -26,7 +29,7 @@ export function acceptLanguage(
   return async (config) => {
     const locale = await getLocale();
     if (locale) {
-      const headers: Record<string, string> = { ...(config.headers || {}) };
+      const headers: HttpHeaders = { ...(config.headers || {}) };
       headers[header] = String(locale);
       return { ...config, headers };
     }

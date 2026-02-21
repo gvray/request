@@ -7,6 +7,7 @@ import type {
   HttpError,
   HttpOptions,
   HttpResponse,
+  HttpHeaders,
 } from '../types';
 
 // 返回字符串或异步字符串的提供者类型
@@ -39,7 +40,7 @@ export function bearerAuth(
 
     const token = await getToken();
     if (token) {
-      const headers: Record<string, string> = { ...(config.headers || {}) };
+      const headers: HttpHeaders = { ...(config.headers || {}) };
       headers[header] = `${scheme} ${token}`;
       return { ...config, headers };
     }

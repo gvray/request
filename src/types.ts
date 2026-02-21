@@ -25,20 +25,128 @@ export interface HttpError extends Error {
   isRequestError?: boolean;
 }
 
-/** Unified request config (engine-agnostic base) */
+/**
+ * ResponseType - 支持的响应类型
+ * - 'arraybuffer', 'blob', 'json', 'text', 'formdata': axios 和 fetch 都支持
+ * - 'document': 只有 axios (XMLHttpRequest) 支持
+ * - 'stream': 只有 Node.js 环境的 axios 支持
+ * @default 'json'
+ */
+export type ResponseType =
+  | 'arraybuffer'
+  | 'blob'
+  | 'document'
+  | 'json'
+  | 'text'
+  | 'stream'
+  | 'formdata';
+
+/**
+ * Method - 两个引擎都支持的 HTTP 方法
+ */
+export type Method =
+  | 'get'
+  | 'GET'
+  | 'delete'
+  | 'DELETE'
+  | 'head'
+  | 'HEAD'
+  | 'options'
+  | 'OPTIONS'
+  | 'post'
+  | 'POST'
+  | 'put'
+  | 'PUT'
+  | 'patch'
+  | 'PATCH';
+
+type Milliseconds = number;
+
+/**
+ * BaseRequestConfig - axios 和 fetch 引擎的交集
+ * 只包含创建客户端的全局配置（默认值）
+ * 注意：不包含请求特定字段（url, method, headers, params, data, signal），这些在运行时传递
+ */
 export interface BaseRequestConfig {
-  url?: string;
-  method?: string;
   baseURL?: string;
-  headers?: Record<string, string>;
-  params?: Record<string, string | number | boolean | null | undefined>;
-  data?: unknown;
-  timeout?: number;
+  timeout?: Milliseconds;
   withCredentials?: boolean;
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
-  signal?: AbortSignal;
-  [key: string]: unknown;
+  responseType?: ResponseType;
 }
+
+/**
+ * HTTP Headers - 参考 axios 的设计，取其精华
+ */
+export type HttpHeaderValue = string | string[] | number | boolean | null;
+
+export interface RawHttpHeaders {
+  [key: string]: HttpHeaderValue;
+}
+
+// 常用请求头列表
+type CommonRequestHeadersList =
+  | 'Accept'
+  | 'Content-Length'
+  | 'User-Agent'
+  | 'Content-Encoding'
+  | 'Authorization';
+
+// Content-Type 常用值（提供智能提示）
+type ContentType =
+  | HttpHeaderValue
+  | 'text/html'
+  | 'text/plain'
+  | 'multipart/form-data'
+  | 'application/json'
+  | 'application/x-www-form-urlencoded'
+  | 'application/octet-stream';
+
+/**
+ * RawHttpRequestHeaders - 提供常用请求头的类型提示
+ * 参考 axios 的 RawAxiosRequestHeaders 设计
+ */
+export type RawHttpRequestHeaders = Partial<
+  RawHttpHeaders & {
+    [Key in CommonRequestHeadersList]: HttpHeaderValue;
+  } & {
+    'Content-Type': ContentType;
+  }
+>;
+
+/**
+ * HttpRequestHeaders - 请求头类型
+ * 参考 axios 的 AxiosRequestHeaders = RawAxiosRequestHeaders & AxiosHeaders
+ * 我们简化为直接使用 RawHttpRequestHeaders
+ */
+export type HttpRequestHeaders = RawHttpRequestHeaders;
+
+/**
+ * HttpHeaders - 请求头类型别名（向后兼容）
+ */
+export type HttpHeaders = HttpRequestHeaders;
+
+// 常用响应头列表
+type CommonResponseHeadersList =
+  | 'Server'
+  | 'Content-Type'
+  | 'Content-Length'
+  | 'Cache-Control'
+  | 'Content-Encoding'
+  | 'Set-Cookie';
+
+/**
+ * RawHttpResponseHeaders - 提供常用响应头的类型提示
+ */
+export type RawHttpResponseHeaders = Partial<
+  RawHttpHeaders & {
+    [Key in CommonResponseHeadersList]: HttpHeaderValue;
+  }
+>;
+
+/**
+ * HttpResponseHeaders - 响应头类型
+ */
+export type HttpResponseHeaders = RawHttpResponseHeaders;
 
 /** Engine type */
 export type Engine = 'axios' | 'fetch';
@@ -138,7 +246,7 @@ export interface Preset {
 // ─── Client / Request config ─────────────────────────────────────────────────
 
 // 创建期配置（客户端级）
-export interface ClientConfig<T = unknown> extends BaseRequestConfig {
+export interface ClientConfig<T = any> extends BaseRequestConfig {
   engine?: Engine;
   errorConfig?: ErrorConfig<T>;
   requestInterceptors?: HttpRequestInterceptorTuple[];
@@ -146,20 +254,34 @@ export interface ClientConfig<T = unknown> extends BaseRequestConfig {
   preset?: Preset;
 }
 
-export type HttpConfig<T = unknown> = ClientConfig<T>;
+export type HttpConfig<T = any> = ClientConfig<T>;
 
-// 请求期配置（运行时），等于 HttpConfig 去掉创建期专属字段
-export type RuntimeRequestConfig<T = unknown> = Omit<
-  ClientConfig<T>,
-  'engine' | 'errorConfig' | 'requestInterceptors' | 'responseInterceptors' | 'preset'
->;
+/**
+ * RuntimeRequestConfig - 运行时请求配置
+ * 直接继承 BaseRequestConfig，不关联 ClientConfig
+ * 添加运行时才需要的字段（url, method, headers, params, data, signal）
+ */
+export interface RuntimeRequestConfig<D = any> extends BaseRequestConfig {
+  url?: string; // 请求 URL
+  method?: Method | string; // 请求方法
+  headers?: HttpHeaders; // 请求头
+  params?: any; // 查询参数
+  data?: D; // 请求体数据
+  signal?: AbortSignal; // 取消信号
+}
 
-export interface HttpRequestOptions extends RuntimeRequestConfig {
+/**
+ * HttpRequestOptions - 运行时请求配置
+ * 包含运行时专属字段（如 skipAuth, _retry 等）
+ */
+export interface HttpRequestOptions<D = any> extends RuntimeRequestConfig<D> {
   skipErrorHandler?: boolean;
   getResponse?: boolean;
   requestInterceptors?: HttpRequestInterceptorTuple[];
   responseInterceptors?: HttpResponseInterceptorTuple[];
+  // 运行时控制字段
   skipAuth?: boolean;
+  _retry?: boolean;
 }
 
 export type HttpOptions = HttpRequestOptions;
