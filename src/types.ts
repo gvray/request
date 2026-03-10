@@ -241,6 +241,23 @@ export interface Preset {
     retryCondition?: (error: HttpError) => boolean;
     onRetry?: (retryCount: number, error: HttpError, config: HttpOptions) => void;
   };
+  logging?:
+    | {
+        level?: 'debug' | 'info' | 'warn' | 'error' | 'none';
+        logRequest?: boolean;
+        logResponse?: boolean;
+        logError?: boolean;
+        logRequestBody?: boolean;
+        logResponseBody?: boolean;
+        logger?: {
+          debug?: (...args: any[]) => void;
+          info?: (...args: any[]) => void;
+          warn?: (...args: any[]) => void;
+          error?: (...args: any[]) => void;
+        };
+        timestampKey?: string;
+      }
+    | boolean;
 }
 
 // ─── Client / Request config ─────────────────────────────────────────────────

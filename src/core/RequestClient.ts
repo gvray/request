@@ -20,6 +20,7 @@ import {
   withCredentials,
   createAuthRefreshInterceptor,
   createRetryInterceptor,
+  createLoggingInterceptor,
 } from '../interceptor';
 
 function getAdapter(engine: Engine = 'axios') {
@@ -79,6 +80,12 @@ class RequestClient {
     }
     if (preset?.retry) {
       builtinResponseInterceptors.push(createRetryInterceptor(this.requestInstance!, preset.retry));
+    }
+    if (preset?.logging) {
+      const loggingOptions = typeof preset.logging === 'boolean' ? {} : preset.logging;
+      const { request, response } = createLoggingInterceptor(loggingOptions);
+      builtinRequestInterceptors.push(request);
+      builtinResponseInterceptors.push(response);
     }
 
     // register builtin first, then user interceptors (user can override behaviors by ordering)
