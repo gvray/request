@@ -4,10 +4,13 @@ import type {
   HttpError,
   Engine,
   ErrorConfig,
-  HttpRequestInterceptorTuple,
+  HttpRequestInterceptorConfig,
+  HttpRequestInterceptor,
   HttpRequestOptions,
   HttpRequestOptionsWithResponse,
-  HttpResponseInterceptorTuple,
+  HttpResponseInterceptorConfig,
+  HttpResponseInterceptor,
+  HttpErrorInterceptor,
   HttpConfig,
   HttpResponse,
   RuntimeRequestConfig,
@@ -42,8 +45,8 @@ class RequestClient {
   private requestInstance: HttpInstance | null = null;
   private requestOptions: HttpOptions;
   private errorConfig: ErrorConfig | null = null;
-  private requestInterceptors: HttpRequestInterceptorTuple[] | null = null;
-  private responseInterceptors: HttpResponseInterceptorTuple[] | null = null;
+  private requestInterceptors: HttpRequestInterceptorConfig[] | null = null;
+  private responseInterceptors: HttpResponseInterceptorConfig[] | null = null;
 
   static getRequestClient(options: HttpConfig) {
     if (RequestClient.requestClient) return RequestClient.requestClient;
@@ -56,8 +59,18 @@ class RequestClient {
 
     // Auto register built-in interceptors from preset
     const preset = (this.requestOptions as HttpConfig)?.preset;
-    const builtinRequestInterceptors: HttpRequestInterceptorTuple[] = [];
-    const builtinResponseInterceptors: HttpResponseInterceptorTuple[] = [];
+    // builtinRequestInterceptors 只包含实际的拦截器，不包含工厂函数
+    const builtinRequestInterceptors: Array<
+      | [HttpRequestInterceptor, HttpErrorInterceptor]
+      | [HttpRequestInterceptor]
+      | HttpRequestInterceptor
+    > = [];
+    // builtinResponseInterceptors 只包含实际的拦截器，不包含工厂函数
+    const builtinResponseInterceptors: Array<
+      | [HttpResponseInterceptor, HttpErrorInterceptor]
+      | [HttpResponseInterceptor]
+      | HttpResponseInterceptor
+    > = [];
 
     if (preset?.bearerAuth) {
       const { getToken, header, scheme, exclude } = preset.bearerAuth;
@@ -75,11 +88,11 @@ class RequestClient {
     }
     if (preset?.authRefresh) {
       builtinResponseInterceptors.push(
-        createAuthRefreshInterceptor(this.requestInstance!, preset.authRefresh)
+        createAuthRefreshInterceptor(preset.authRefresh, this.requestInstance!)
       );
     }
     if (preset?.retry) {
-      builtinResponseInterceptors.push(createRetryInterceptor(this.requestInstance!, preset.retry));
+      builtinResponseInterceptors.push(createRetryInterceptor(preset.retry, this.requestInstance!));
     }
     if (preset?.logging) {
       const loggingOptions = typeof preset.logging === 'boolean' ? {} : preset.logging;
@@ -98,28 +111,65 @@ class RequestClient {
       }
     });
     builtinResponseInterceptors.forEach((interceptor) => {
+      // builtinResponseInterceptors 只包含实际的拦截器，不包含工厂函数
       if (Array.isArray(interceptor)) {
         const [success, fail] = interceptor;
         this.requestInstance?.interceptors.response.use(success, fail);
       } else {
-        this.requestInstance?.interceptors.response.use(interceptor);
+        // 这里的 interceptor 一定是 HttpResponseInterceptor，不是工厂函数
+        this.requestInstance?.interceptors.response.use(interceptor as HttpResponseInterceptor);
       }
     });
 
     this.requestInterceptors?.forEach((interceptor) => {
-      if (Array.isArray(interceptor)) {
+      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
+      if (typeof interceptor === 'function' && interceptor.length === 1) {
+        const factory = interceptor as (
+          instance: HttpInstance
+        ) =>
+          | [HttpRequestInterceptor, HttpErrorInterceptor]
+          | [HttpRequestInterceptor]
+          | HttpRequestInterceptor;
+        const result = factory(this.requestInstance!);
+        if (Array.isArray(result)) {
+          const [success, fail] = result;
+          this.requestInstance?.interceptors.request.use(success, fail);
+        } else {
+          this.requestInstance?.interceptors.request.use(result);
+        }
+      } else if (Array.isArray(interceptor)) {
         const [success, fail] = interceptor;
         return this.requestInstance?.interceptors.request.use(success, fail);
+      } else if (typeof interceptor === 'function') {
+        // 普通的请求拦截器函数
+        return this.requestInstance?.interceptors.request.use(
+          interceptor as HttpRequestInterceptor
+        );
       }
-      return this.requestInstance?.interceptors.request.use(interceptor);
     });
 
     this.responseInterceptors?.forEach((interceptor) => {
-      if (Array.isArray(interceptor)) {
+      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
+      if (typeof interceptor === 'function' && interceptor.length === 1) {
+        const factory = interceptor as (
+          instance: HttpInstance
+        ) =>
+          | [HttpResponseInterceptor, HttpErrorInterceptor]
+          | [HttpResponseInterceptor]
+          | HttpResponseInterceptor;
+        const result = factory(this.requestInstance!);
+        if (Array.isArray(result)) {
+          const [success, fail] = result;
+          this.requestInstance?.interceptors.response.use(success, fail);
+        } else {
+          this.requestInstance?.interceptors.response.use(result);
+        }
+      } else if (Array.isArray(interceptor)) {
         const [success, fail] = interceptor;
         this.requestInstance?.interceptors.response.use(success, fail);
-      } else {
-        this.requestInstance?.interceptors.response.use(interceptor);
+      } else if (typeof interceptor === 'function') {
+        // 普通的响应拦截器函数
+        this.requestInstance?.interceptors.response.use(interceptor as HttpResponseInterceptor);
       }
     });
 
@@ -152,20 +202,51 @@ class RequestClient {
       // skipErrorHandler 和 skipAuth 通过 opts 对象传递给拦截器，不需要在这里解构
     } = opts || this.requestOptions || {};
 
-    const requestInterceptorsToEject = requestInterceptors?.map((interceptor) => {
-      if (Array.isArray(interceptor)) {
+    const requestInterceptorsToEject = requestInterceptors?.map((interceptor): number => {
+      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
+      if (typeof interceptor === 'function' && interceptor.length === 1) {
+        const factory = interceptor as (
+          instance: HttpInstance
+        ) =>
+          | [HttpRequestInterceptor, HttpErrorInterceptor]
+          | [HttpRequestInterceptor]
+          | HttpRequestInterceptor;
+        const result = factory(requestInstance);
+        if (Array.isArray(result)) {
+          const [success, fail] = result;
+          return requestInstance.interceptors.request.use(success, fail);
+        } else {
+          return requestInstance.interceptors.request.use(result);
+        }
+      } else if (Array.isArray(interceptor)) {
         const [success, fail] = interceptor;
         return requestInstance.interceptors.request.use(success, fail);
+      } else {
+        return requestInstance.interceptors.request.use(interceptor as HttpRequestInterceptor);
       }
-      return requestInstance.interceptors.request.use(interceptor);
     });
 
-    const responseInterceptorsToEject = responseInterceptors?.map((interceptor) => {
-      if (Array.isArray(interceptor)) {
+    const responseInterceptorsToEject = responseInterceptors?.map((interceptor): number => {
+      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
+      if (typeof interceptor === 'function' && interceptor.length === 1) {
+        const factory = interceptor as (
+          instance: HttpInstance
+        ) =>
+          | [HttpResponseInterceptor, HttpErrorInterceptor]
+          | [HttpResponseInterceptor]
+          | HttpResponseInterceptor;
+        const result = factory(requestInstance);
+        if (Array.isArray(result)) {
+          const [success, fail] = result;
+          return requestInstance.interceptors.response.use(success, fail);
+        } else {
+          return requestInstance.interceptors.response.use(result);
+        }
+      } else if (Array.isArray(interceptor)) {
         const [success, fail] = interceptor;
         return requestInstance.interceptors.response.use(success, fail);
       } else {
-        return requestInstance.interceptors.response.use(interceptor);
+        return requestInstance.interceptors.response.use(interceptor as HttpResponseInterceptor);
       }
     });
 
@@ -190,7 +271,7 @@ class RequestClient {
           });
           try {
             const handler = this.errorConfig?.errorHandler;
-            const feedBack = this.errorConfig?.errorFeedBack;
+            const feedBack = this.errorConfig?.errorFeedback;
             if (handler) {
               handler(error as HttpError, opts as HttpRequestOptions, feedBack);
             }

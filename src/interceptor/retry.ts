@@ -46,10 +46,40 @@ function sleep(ms: number): Promise<void> {
 /**
  * 创建请求重试拦截器
  * 在请求失败时根据配置自动重试
+ *
+ * 使用方式：
+ * 1. 通过 Preset（推荐）：preset: { retry: { ... } }
+ * 2. 手动配置：createRetryInterceptor(options, instance)
  */
+// 重载 1：只传 options，返回一个接受 instance 的函数（用于手动配置）
 export function createRetryInterceptor(
-  instance: HttpInstance,
-  options: RetryOptions = {}
+  options?: RetryOptions
+): (instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor];
+// 重载 2：传 options 和 instance，直接返回拦截器（用于 Preset）
+export function createRetryInterceptor(
+  options: RetryOptions | undefined,
+  instance: HttpInstance
+): [HttpResponseInterceptor, HttpErrorInterceptor];
+// 实现
+export function createRetryInterceptor(
+  options?: RetryOptions,
+  instance?: HttpInstance
+):
+  | [HttpResponseInterceptor, HttpErrorInterceptor]
+  | ((instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor]) {
+  if (instance) {
+    // 重载 2：createRetryInterceptor(options, instance)
+    return createRetryInterceptorImpl(options || {}, instance);
+  } else {
+    // 重载 1：createRetryInterceptor(options)
+    return (instance: HttpInstance) => createRetryInterceptorImpl(options || {}, instance);
+  }
+}
+
+// 实际的拦截器实现
+function createRetryInterceptorImpl(
+  options: RetryOptions = {},
+  instance: HttpInstance
 ): [HttpResponseInterceptor, HttpErrorInterceptor] {
   const {
     maxRetries = 3,
@@ -103,11 +133,10 @@ export function createRetryInterceptor(
 }
 
 /**
- * 简单的重试拦截器（使用默认配置）
+ * 简化的重试拦截器（使用默认配置）
  */
 export function retry(
-  instance: HttpInstance,
   maxRetries = 3
-): [HttpResponseInterceptor, HttpErrorInterceptor] {
-  return createRetryInterceptor(instance, { maxRetries });
+): (instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor] {
+  return createRetryInterceptor({ maxRetries });
 }

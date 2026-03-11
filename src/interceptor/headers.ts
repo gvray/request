@@ -1,10 +1,10 @@
-import type { HttpInterceptor, HttpHeaders } from '../types';
+import type { HttpRequestInterceptor, HttpHeaders } from '../types';
 import type { StringProvider } from './auth';
 
 /**
  * 为非 GET/HEAD 请求自动注入 Content-Type: application/json（若未显式设置）
  */
-export function jsonContentType(): HttpInterceptor {
+export function jsonContentType(): HttpRequestInterceptor {
   return (config) => {
     const method = String(config.method || 'GET').toUpperCase();
     const needBody = method !== 'GET' && method !== 'HEAD';
@@ -25,7 +25,7 @@ export function jsonContentType(): HttpInterceptor {
 export function acceptLanguage(
   getLocale: StringProvider,
   header = 'Accept-Language'
-): HttpInterceptor {
+): HttpRequestInterceptor {
   return async (config) => {
     const locale = await getLocale();
     if (locale) {

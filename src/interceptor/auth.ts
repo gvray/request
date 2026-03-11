@@ -1,7 +1,7 @@
 import type {
-  HttpInterceptor,
+  HttpRequestInterceptor,
   HttpInstance,
-  WithPromise,
+  MaybePromise,
   HttpResponseInterceptor,
   HttpErrorInterceptor,
   HttpError,
@@ -11,7 +11,7 @@ import type {
 } from '../types';
 
 // 返回字符串或异步字符串的提供者类型
-export type StringProvider = () => WithPromise<string | null | undefined>;
+export type StringProvider = () => MaybePromise<string | null | undefined>;
 
 /**
  * 在请求头中注入 Authorization: Bearer <token>
@@ -21,7 +21,7 @@ export function bearerAuth(
   header = 'Authorization',
   scheme = 'Bearer',
   exclude?: Array<string | RegExp> | ((url?: string, options?: Record<string, unknown>) => boolean)
-): HttpInterceptor {
+): HttpRequestInterceptor {
   return async (config) => {
     const url = config.url as string | undefined;
 
@@ -84,11 +84,39 @@ interface PendingRequest {
  * 3. 刷新成功：按顺序重试所有等待的请求
  * 4. 刷新失败：拒绝所有等待的请求，只调用一次 loginRedirect
  *
- * 使用方式：在客户端的 responseInterceptors 中传入返回的 tuple。
+ * 使用方式：
+ * 1. 通过 Preset（推荐）：preset: { authRefresh: { ... } }
+ * 2. 手动配置：createAuthRefreshInterceptor(options, instance)
  */
+// 重载 1：只传 options，返回一个接受 instance 的函数（用于手动配置）
 export function createAuthRefreshInterceptor(
-  instance: HttpInstance,
   options: AuthRefreshOptions
+): (instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor];
+// 重载 2：传 options 和 instance，直接返回拦截器（用于 Preset）
+export function createAuthRefreshInterceptor(
+  options: AuthRefreshOptions,
+  instance: HttpInstance
+): [HttpResponseInterceptor, HttpErrorInterceptor];
+// 实现
+export function createAuthRefreshInterceptor(
+  options: AuthRefreshOptions,
+  instance?: HttpInstance
+):
+  | [HttpResponseInterceptor, HttpErrorInterceptor]
+  | ((instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor]) {
+  if (instance) {
+    // 重载 2：createAuthRefreshInterceptor(options, instance)
+    return createInterceptorImpl(options, instance);
+  } else {
+    // 重载 1：createAuthRefreshInterceptor(options)
+    return (instance: HttpInstance) => createInterceptorImpl(options, instance);
+  }
+}
+
+// 实际的拦截器实现
+function createInterceptorImpl(
+  options: AuthRefreshOptions,
+  instance: HttpInstance
 ): [HttpResponseInterceptor, HttpErrorInterceptor] {
   const {
     refreshToken,

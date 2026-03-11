@@ -1,4 +1,8 @@
-import type { HttpInterceptor, HttpResponseInterceptor, HttpErrorInterceptor } from '../types';
+import type {
+  HttpRequestInterceptor,
+  HttpResponseInterceptor,
+  HttpErrorInterceptor,
+} from '../types';
 
 export type CacheEntry = {
   data: unknown;
@@ -66,7 +70,7 @@ function shouldExclude(url: string, exclude?: Array<string | RegExp>): boolean {
  * 缓存 GET 请求的响应，减少重复请求
  */
 export function createCacheInterceptor(options: CacheOptions = {}): {
-  request: HttpInterceptor;
+  request: HttpRequestInterceptor;
   response: [HttpResponseInterceptor, HttpErrorInterceptor];
   storage: CacheStorage;
   clear: () => void | Promise<void>;
@@ -81,7 +85,7 @@ export function createCacheInterceptor(options: CacheOptions = {}): {
     onCacheMiss,
   } = options;
 
-  const requestInterceptor: HttpInterceptor = async (config) => {
+  const requestInterceptor: HttpRequestInterceptor = async (config) => {
     const method = String(config.method || 'GET').toUpperCase();
     const url = String(config.url || '');
     const ext = config as Record<string, unknown>;

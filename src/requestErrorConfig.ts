@@ -1,7 +1,7 @@
 import {
-  ErrorFeedInfo,
+  ErrorFeedbackInfo,
   ErrorShowType,
-  type BizError,
+  type BusinessError,
   type ErrorConfig,
   type HttpRequestOptions,
 } from './types';
@@ -20,8 +20,8 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
     const { success, data, code, message, showType } = res;
 
     if (!success) {
-      const error = new Error(message) as BizError;
-      error.name = 'BizError';
+      const error = new Error(message) as BusinessError;
+      error.name = 'BusinessError';
       error.info = { code, message, showType, data };
       throw error; // Throw a custom error for the errorHandler to handle.
     }
@@ -31,11 +31,11 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
   errorHandler: (
     error: any,
     opts: HttpRequestOptions,
-    feedBack?: (errorInfo: ErrorFeedInfo) => void
+    feedBack?: (errorInfo: ErrorFeedbackInfo) => void
   ) => {
     if (opts?.skipErrorHandler) throw error;
     // Our errorThrower throws errors.
-    if (error.name === 'BizError') {
+    if (error.name === 'BusinessError') {
       const errorInfo = error.info;
       if (errorInfo) {
         const { message, code } = errorInfo;
@@ -124,7 +124,7 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
       if (feedBack) {
         feedBack({
           showType: ErrorShowType.ERROR_MESSAGE,
-          errorType: 'ResponseError',
+          errorType: 'Response',
           message,
           error,
         });
@@ -138,7 +138,7 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
       if (feedBack) {
         feedBack({
           showType: ErrorShowType.SILENT,
-          errorType: 'ResponseError',
+          errorType: 'Response',
           message: 'None response! Please retry.',
           error,
         });
@@ -150,7 +150,7 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
       if (feedBack) {
         feedBack({
           showType: ErrorShowType.SILENT,
-          errorType: 'RequestError',
+          errorType: 'Request',
           message: 'Request error, please retry.',
           error,
         });
@@ -159,9 +159,9 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
       }
     }
   },
-  errorFeedBack: (errorInfo: ErrorFeedInfo) => {
+  errorFeedback: (errorInfo: ErrorFeedbackInfo) => {
     console.error(
-      '[Request] ErrorFeedBack:',
+      '[Request] ErrorFeedback:',
       errorInfo,
       'It is recommended to rewrite the errorFeedBack method.'
     );

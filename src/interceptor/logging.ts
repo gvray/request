@@ -1,5 +1,5 @@
 import type {
-  HttpInterceptor,
+  HttpRequestInterceptor,
   HttpErrorInterceptor,
   HttpResponseInterceptor,
   HttpError,
@@ -48,7 +48,7 @@ function shouldLog(currentLevel: LogLevel, targetLevel: LogLevel): boolean {
  * 记录请求和响应的详细信息
  */
 export function createLoggingInterceptor(options: LoggingOptions = {}): {
-  request: HttpInterceptor;
+  request: HttpRequestInterceptor;
   response: [HttpResponseInterceptor, HttpErrorInterceptor];
 } {
   const {
@@ -68,7 +68,7 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
     logFn(...args);
   };
 
-  const requestInterceptor: HttpInterceptor = (config) => {
+  const requestInterceptor: HttpRequestInterceptor = (config) => {
     if (logRequest) {
       const method = String(config.method || 'GET').toUpperCase();
       const url = String(config.url || '');
@@ -134,7 +134,7 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
  * 简单日志拦截器（仅记录基本信息）
  */
 export function logging(): {
-  request: HttpInterceptor;
+  request: HttpRequestInterceptor;
   response: [HttpResponseInterceptor, HttpErrorInterceptor];
 } {
   return createLoggingInterceptor();

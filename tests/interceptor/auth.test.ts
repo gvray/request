@@ -170,18 +170,24 @@ describe('bearerAuth', () => {
 
 describe('createAuthRefreshInterceptor', () => {
   it('should return response interceptor tuple', () => {
-    const [onResponse, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-      refreshToken: vi.fn().mockResolvedValue('new-token'),
-    });
+    const [onResponse, onError] = createAuthRefreshInterceptor(
+      {
+        refreshToken: vi.fn().mockResolvedValue('new-token'),
+      },
+      createMockInstance()
+    );
 
     expect(typeof onResponse).toBe('function');
     expect(typeof onError).toBe('function');
   });
 
   it('should pass through successful responses', async () => {
-    const [onResponse] = createAuthRefreshInterceptor(createMockInstance(), {
-      refreshToken: vi.fn().mockResolvedValue('new-token'),
-    });
+    const [onResponse] = createAuthRefreshInterceptor(
+      {
+        refreshToken: vi.fn().mockResolvedValue('new-token'),
+      },
+      createMockInstance()
+    );
 
     const mockResponse = { data: { success: true }, status: 200 };
     const result = await onResponse(mockResponse as any);
@@ -190,9 +196,12 @@ describe('createAuthRefreshInterceptor', () => {
   });
 
   it('should reject non-auth errors', async () => {
-    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-      refreshToken: vi.fn().mockResolvedValue('new-token'),
-    });
+    const [, onError] = createAuthRefreshInterceptor(
+      {
+        refreshToken: vi.fn().mockResolvedValue('new-token'),
+      },
+      createMockInstance()
+    );
 
     const mockError = {
       response: { status: 500 },
@@ -204,10 +213,13 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should call loginRedirect when refresh fails', async () => {
     const loginRedirect = vi.fn();
-    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-      refreshToken: vi.fn().mockRejectedValue(new Error('Refresh failed')),
-      loginRedirect,
-    });
+    const [, onError] = createAuthRefreshInterceptor(
+      {
+        refreshToken: vi.fn().mockRejectedValue(new Error('Refresh failed')),
+        loginRedirect,
+      },
+      createMockInstance()
+    );
 
     const mockError = {
       response: { status: 401 },
@@ -223,10 +235,13 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should call loginRedirect on retry failure', async () => {
     const loginRedirect = vi.fn();
-    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-      refreshToken: vi.fn().mockResolvedValue('new-token'),
-      loginRedirect,
-    });
+    const [, onError] = createAuthRefreshInterceptor(
+      {
+        refreshToken: vi.fn().mockResolvedValue('new-token'),
+        loginRedirect,
+      },
+      createMockInstance()
+    );
 
     const mockError = {
       response: { status: 401 },
@@ -242,10 +257,13 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should handle custom status codes', async () => {
     const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
-    const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-      refreshToken,
-      statuses: [419],
-    });
+    const [, onError] = createAuthRefreshInterceptor(
+      {
+        refreshToken,
+        statuses: [419],
+      },
+      createMockInstance()
+    );
 
     const mockError = {
       response: { status: 419 },
@@ -260,10 +278,13 @@ describe('createAuthRefreshInterceptor', () => {
     const setToken = vi.fn();
     const refreshToken = vi.fn().mockResolvedValue('new-token');
 
-    createAuthRefreshInterceptor(createMockInstance(), {
-      refreshToken,
-      setToken,
-    });
+    createAuthRefreshInterceptor(
+      {
+        refreshToken,
+        setToken,
+      },
+      createMockInstance()
+    );
 
     // The setToken is called inside the refresh flow
     // This test verifies the configuration is accepted
@@ -280,10 +301,13 @@ describe('createAuthRefreshInterceptor', () => {
       const loginRedirect = vi.fn();
 
       const mockInstance = createMockInstance();
-      const [, onError] = createAuthRefreshInterceptor(mockInstance, {
-        refreshToken,
-        loginRedirect,
-      });
+      const [, onError] = createAuthRefreshInterceptor(
+        {
+          refreshToken,
+          loginRedirect,
+        },
+        mockInstance
+      );
 
       // Simulate 3 concurrent requests hitting 401
       const error1 = { response: { status: 401 }, config: { url: '/api/1' } };
@@ -312,10 +336,13 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-        refreshToken,
-        loginRedirect,
-      });
+      const [, onError] = createAuthRefreshInterceptor(
+        {
+          refreshToken,
+          loginRedirect,
+        },
+        createMockInstance()
+      );
 
       // Simulate 3 concurrent requests hitting 401
       const error1 = { response: { status: 401 }, config: { url: '/api/1' } };
@@ -342,10 +369,13 @@ describe('createAuthRefreshInterceptor', () => {
       const loginRedirect = vi.fn();
       const refreshToken = vi.fn().mockResolvedValue(null); // Returns null = no token
 
-      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-        refreshToken,
-        loginRedirect,
-      });
+      const [, onError] = createAuthRefreshInterceptor(
+        {
+          refreshToken,
+          loginRedirect,
+        },
+        createMockInstance()
+      );
 
       const error1 = { response: { status: 401 }, config: { url: '/api/1' } };
       const error2 = { response: { status: 401 }, config: { url: '/api/2' } };
@@ -362,10 +392,13 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-        refreshToken,
-        loginRedirect,
-      });
+      const [, onError] = createAuthRefreshInterceptor(
+        {
+          refreshToken,
+          loginRedirect,
+        },
+        createMockInstance()
+      );
 
       // First request triggers refresh and fails
       const error1 = { response: { status: 401 }, config: { url: '/api/1' } };
@@ -390,10 +423,13 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockResolvedValue('new-token');
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor(createMockInstance(), {
-        refreshToken,
-        loginRedirect,
-      });
+      const [, onError] = createAuthRefreshInterceptor(
+        {
+          refreshToken,
+          loginRedirect,
+        },
+        createMockInstance()
+      );
 
       // Request that was already retried
       const error = {

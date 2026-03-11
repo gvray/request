@@ -1,4 +1,4 @@
-import type { HttpInterceptor } from '../types';
+import type { HttpRequestInterceptor } from '../types';
 
 export type TimeoutOptions = {
   // 超时时间（毫秒）
@@ -11,7 +11,7 @@ export type TimeoutOptions = {
  * 为请求设置超时时间
  * 如果请求配置中已有 timeout，则保留原值
  */
-export function timeout(options: TimeoutOptions | number): HttpInterceptor {
+export function timeout(options: TimeoutOptions | number): HttpRequestInterceptor {
   const config = typeof options === 'number' ? { timeout: options } : options;
 
   return (requestConfig) => {
@@ -31,6 +31,6 @@ export function timeout(options: TimeoutOptions | number): HttpInterceptor {
 /**
  * 设置默认超时（60秒）
  */
-export function defaultTimeout(): HttpInterceptor {
+export function defaultTimeout(): HttpRequestInterceptor {
   return timeout({ timeout: 60000, message: '请求超时' });
 }

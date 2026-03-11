@@ -60,7 +60,10 @@ export type Method =
   | 'patch'
   | 'PATCH';
 
-type Milliseconds = number;
+/**
+ * 时间单位：毫秒
+ */
+export type Milliseconds = number;
 
 /**
  * BaseRequestConfig - axios 和 fetch 引擎的交集
@@ -153,31 +156,46 @@ export type Engine = 'axios' | 'fetch';
 
 // ─── Interceptor types ───────────────────────────────────────────────────────
 
-export type WithPromise<T> = T | Promise<T>;
+/**
+ * MaybePromise - 可能是同步值或 Promise
+ */
+export type MaybePromise<T> = T | Promise<T>;
 
-export type HttpInterceptor = (config: HttpRequestOptions) => WithPromise<HttpRequestOptions>;
+export type HttpRequestInterceptor = (
+  config: HttpRequestOptions
+) => MaybePromise<HttpRequestOptions>;
 
-export type HttpErrorInterceptor = (error: unknown) => WithPromise<unknown>;
+export type HttpErrorInterceptor = (error: unknown) => MaybePromise<unknown>;
 export type HttpResponseInterceptor = <T = unknown>(
   response: HttpResponse<T>
-) => WithPromise<HttpResponse<T>>;
+) => MaybePromise<HttpResponse<T>>;
 
-export type HttpRequestInterceptorTuple =
-  | [HttpInterceptor, HttpErrorInterceptor]
-  | [HttpInterceptor]
-  | HttpInterceptor;
-export type HttpResponseInterceptorTuple =
+export type HttpRequestInterceptorConfig =
+  | [HttpRequestInterceptor, HttpErrorInterceptor]
+  | [HttpRequestInterceptor]
+  | HttpRequestInterceptor
+  | ((instance: HttpInstance) => [HttpRequestInterceptor, HttpErrorInterceptor])
+  | ((instance: HttpInstance) => [HttpRequestInterceptor])
+  | ((instance: HttpInstance) => HttpRequestInterceptor);
+export type HttpResponseInterceptorConfig =
   | [HttpResponseInterceptor, HttpErrorInterceptor]
   | [HttpResponseInterceptor]
-  | HttpResponseInterceptor;
+  | HttpResponseInterceptor
+  | ((instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor])
+  | ((instance: HttpInstance) => [HttpResponseInterceptor])
+  | ((instance: HttpInstance) => HttpResponseInterceptor);
 
 // ─── Error handling ──────────────────────────────────────────────────────────
 
 export interface HttpErrorHandler {
-  (error: HttpError, opts: HttpRequestOptions, feedBack?: (errorInfo: ErrorFeedInfo) => void): void;
+  (
+    error: HttpError,
+    opts: HttpRequestOptions,
+    feedback?: (errorInfo: ErrorFeedbackInfo) => void
+  ): void;
 }
 
-export type BizError = Error & {
+export type BusinessError = Error & {
   name: string;
   info: unknown;
 };
@@ -191,9 +209,9 @@ export enum ErrorShowType {
   REDIRECT = 9,
 }
 
-export type ErrorType = 'BizError' | 'ResponseError' | 'RequestError';
+export type ErrorType = 'Business' | 'Response' | 'Request';
 
-export type ErrorFeedInfo = {
+export type ErrorFeedbackInfo = {
   showType: ErrorShowType;
   errorType: ErrorType;
   message: string;
@@ -201,25 +219,25 @@ export type ErrorFeedInfo = {
   error?: HttpError;
 };
 
-export type ErrorFeedBack = (errorInfo: ErrorFeedInfo) => void;
+export type ErrorFeedback = (errorInfo: ErrorFeedbackInfo) => void;
 
-export interface ErrorConfig<T = unknown> {
+export interface ErrorConfig<TErrorData = unknown> {
   errorHandler?: HttpErrorHandler;
-  errorThrower?: (res: T) => void;
-  errorFeedBack?: ErrorFeedBack;
+  errorThrower?: (res: TErrorData) => void;
+  errorFeedback?: ErrorFeedback;
 }
 
 // ─── Preset (built-in interceptor config) ────────────────────────────────────
 
 export interface Preset {
   bearerAuth?: {
-    getToken: () => WithPromise<string | null | undefined>;
+    getToken: () => MaybePromise<string | null | undefined>;
     header?: string;
     scheme?: string;
     exclude?: Array<string | RegExp> | ((url?: string, options?: HttpRequestOptions) => boolean);
   };
   acceptLanguage?: {
-    getLocale: () => WithPromise<string | null | undefined>;
+    getLocale: () => MaybePromise<string | null | undefined>;
     header?: string;
   };
   jsonContentType?: boolean;
@@ -263,15 +281,15 @@ export interface Preset {
 // ─── Client / Request config ─────────────────────────────────────────────────
 
 // 创建期配置（客户端级）
-export interface ClientConfig<T = any> extends BaseRequestConfig {
+export interface ClientConfig<TErrorData = any> extends BaseRequestConfig {
   engine?: Engine;
-  errorConfig?: ErrorConfig<T>;
-  requestInterceptors?: HttpRequestInterceptorTuple[];
-  responseInterceptors?: HttpResponseInterceptorTuple[];
+  errorConfig?: ErrorConfig<TErrorData>;
+  requestInterceptors?: HttpRequestInterceptorConfig[];
+  responseInterceptors?: HttpResponseInterceptorConfig[];
   preset?: Preset;
 }
 
-export type HttpConfig<T = any> = ClientConfig<T>;
+export type HttpConfig<TErrorData = any> = ClientConfig<TErrorData>;
 
 /**
  * RuntimeRequestConfig - 运行时请求配置
@@ -294,8 +312,8 @@ export interface RuntimeRequestConfig<D = any> extends BaseRequestConfig {
 export interface HttpRequestOptions<D = any> extends RuntimeRequestConfig<D> {
   skipErrorHandler?: boolean;
   getResponse?: boolean;
-  requestInterceptors?: HttpRequestInterceptorTuple[];
-  responseInterceptors?: HttpResponseInterceptorTuple[];
+  requestInterceptors?: HttpRequestInterceptorConfig[];
+  responseInterceptors?: HttpResponseInterceptorConfig[];
   // 运行时控制字段
   skipAuth?: boolean;
   _retry?: boolean;
