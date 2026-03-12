@@ -48,6 +48,118 @@ export function requestBearerAuth(
   };
 }
 
+export type RequestAuthRefreshOptions = {
+  // 获取当前 token，返回 null/undefined 表示 token 过期
+  getToken: StringProvider;
+  // 刷新 token 并返回新的 access token
+  refreshToken: () => Promise<string | null | undefined>;
+  // 将新 token 持久化（可选，也可以在 refreshToken 中处理）
+  setToken?: (token: string) => Promise<void> | void;
+  // 认证头部配置
+  header?: string; // 默认 'Authorization'
+  scheme?: string; // 默认 'Bearer'
+  // 排除的 URL（不需要刷新 token 的接口，如登录、注册等）
+  exclude?: Array<string | RegExp> | ((url?: string, options?: Record<string, any>) => boolean);
+};
+
+/**
+ * 请求拦截器：在发送请求前检查 token，如果为 null 则先刷新
+ * 适用于前端可以判断 token 过期的场景（如通过 localStorage、storeTify 等）
+ *
+ * 工作流程：
+ * 1. 调用 getToken() 获取当前 token
+ * 2. 如果返回 null/undefined，说明 token 过期，触发刷新
+ * 3. 所有请求会等待刷新完成（并发请求共享同一个刷新 Promise）
+ * 4. 刷新成功后，注入新 token 并继续请求
+ *
+ * 注意：
+ * - 请求拦截器会阻塞请求直到刷新完成
+ * - 多个并发请求会共享同一个刷新 Promise，只刷新一次
+ * - 与 createResponseAuthRefresh 相互独立，只能选择其中一个
+ *
+ * @example
+ * ```ts
+ * const interceptor = requestAuthRefresh({
+ *   getToken: () => localStorage.getItem('access_token'), // 返回 null 表示过期
+ *   refreshToken: async () => {
+ *     const refreshToken = localStorage.getItem('refresh_token');
+ *     const response = await fetch('/api/refresh', {
+ *       method: 'POST',
+ *       body: JSON.stringify({ refreshToken }),
+ *     });
+ *     const { accessToken } = await response.json();
+ *     localStorage.setItem('access_token', accessToken);
+ *     return accessToken;
+ *   },
+ * });
+ * ```
+ */
+export function requestAuthRefresh(options: RequestAuthRefreshOptions): GvrayRequestInterceptor {
+  const {
+    getToken,
+    refreshToken,
+    setToken,
+    header = 'Authorization',
+    scheme = 'Bearer',
+    exclude,
+  } = options;
+
+  let refreshPromise: Promise<string | null | undefined> | null = null;
+
+  return async (config) => {
+    const url = config.url as string | undefined;
+
+    // 判断是否需要跳过
+    let shouldExclude = false;
+    if (typeof exclude === 'function') {
+      shouldExclude = exclude(url, config as Record<string, any>) === true;
+    } else if (Array.isArray(exclude) && url) {
+      shouldExclude = exclude.some((rule) =>
+        typeof rule === 'string' ? url.includes(rule) : !!url.match(rule as RegExp)
+      );
+    }
+
+    // 运行时跳过或排除的 URL
+    if (config.skipAuth === true || shouldExclude) {
+      return config;
+    }
+
+    // 获取当前 token
+    let token = await getToken();
+
+    // 如果 token 不存在（null/undefined），说明过期，需要刷新
+    if (!token) {
+      // 如果已经有刷新请求在进行中，等待它完成（多个并发请求共享同一个刷新）
+      if (!refreshPromise) {
+        refreshPromise = refreshToken()
+          .then(async (newToken) => {
+            if (newToken && setToken) {
+              await setToken(newToken);
+            }
+            return newToken;
+          })
+          .finally(() => {
+            // 刷新完成后清空 Promise，允许下次刷新
+            refreshPromise = null;
+          });
+      }
+
+      // 等待刷新完成
+      token = await refreshPromise;
+    }
+
+    // 如果有 token，注入到请求头
+    if (token) {
+      const headers: GvrayRequestHeaders = { ...(config.headers || {}) };
+      headers[header] = `${scheme} ${token}`;
+      return { ...config, headers };
+    }
+
+    // 没有 token（刷新失败或未登录），返回原配置
+    return config;
+  };
+}
+
 export type AuthRefreshOptions = {
   // 执行刷新令牌流程，返回新的 access token（也可通过 setToken 持久化）
   refreshToken: () => Promise<string | null | undefined>;

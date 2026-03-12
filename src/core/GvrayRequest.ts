@@ -1,4 +1,3 @@
-import { axiosAdapter, fetchAdapter } from '../adapters';
 import type {
   GvrayInstance,
   GvrayError,
@@ -20,16 +19,18 @@ import {
   requestJsonContentType,
   requestAcceptLanguage,
   requestWithCredentials,
+  requestAuthRefresh,
   createResponseAuthRefresh,
   createResponseRetry,
   createLoggingInterceptor,
 } from '../interceptor';
+import {
+  getAdapter,
+  registerRequestInterceptor,
+  registerResponseInterceptor,
+} from './gvrayRequestHelpers';
 
-function getAdapter(engine: Engine = 'axios') {
-  return engine === 'fetch' ? fetchAdapter : axiosAdapter;
-}
-
-class RequestClient {
+class GvrayRequest {
   constructor(options: GvrayConfig) {
     const { engine, errorConfig, requestInterceptors, responseInterceptors, ...rest } = options;
     this.engine = engine || 'axios';
@@ -39,7 +40,7 @@ class RequestClient {
     this.responseInterceptors = responseInterceptors || null;
     this.getRequestInstance(rest);
   }
-  static requestClient: RequestClient | null = null;
+  static requestClient: GvrayRequest | null = null;
   private engine: Engine;
   private requestInstance: GvrayInstance | null = null;
   private requestOptions: GvrayOptions;
@@ -48,9 +49,9 @@ class RequestClient {
   private responseInterceptors: GvrayResponseInterceptorConfig[] | null = null;
 
   static getRequestClient(options: GvrayConfig) {
-    if (RequestClient.requestClient) return RequestClient.requestClient;
-    RequestClient.requestClient = new RequestClient(options);
-    return RequestClient.requestClient;
+    if (GvrayRequest.requestClient) return GvrayRequest.requestClient;
+    GvrayRequest.requestClient = new GvrayRequest(options);
+    return GvrayRequest.requestClient;
   }
   private getRequestInstance(config: GvrayRequestConfig) {
     const adapter = getAdapter(this.engine);
@@ -85,9 +86,12 @@ class RequestClient {
     if (preset?.withCredentials) {
       builtinRequestInterceptors.push(requestWithCredentials());
     }
-    if (preset?.authRefresh) {
+    if (preset?.requestAuthRefresh) {
+      builtinRequestInterceptors.push(requestAuthRefresh(preset.requestAuthRefresh));
+    }
+    if (preset?.responseAuthRefresh) {
       builtinResponseInterceptors.push(
-        createResponseAuthRefresh(preset.authRefresh, this.requestInstance!)
+        createResponseAuthRefresh(preset.responseAuthRefresh, this.requestInstance!)
       );
     }
     if (preset?.retry) {
@@ -121,55 +125,11 @@ class RequestClient {
     });
 
     this.requestInterceptors?.forEach((interceptor) => {
-      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
-      if (typeof interceptor === 'function' && interceptor.length === 1) {
-        const factory = interceptor as (
-          instance: GvrayInstance
-        ) =>
-          | [GvrayRequestInterceptor, GvrayErrorInterceptor]
-          | [GvrayRequestInterceptor]
-          | GvrayRequestInterceptor;
-        const result = factory(this.requestInstance!);
-        if (Array.isArray(result)) {
-          const [success, fail] = result;
-          this.requestInstance?.interceptors.request.use(success, fail);
-        } else {
-          this.requestInstance?.interceptors.request.use(result);
-        }
-      } else if (Array.isArray(interceptor)) {
-        const [success, fail] = interceptor;
-        return this.requestInstance?.interceptors.request.use(success, fail);
-      } else if (typeof interceptor === 'function') {
-        // 普通的请求拦截器函数
-        return this.requestInstance?.interceptors.request.use(
-          interceptor as GvrayRequestInterceptor
-        );
-      }
+      registerRequestInterceptor(interceptor, this.requestInstance!);
     });
 
     this.responseInterceptors?.forEach((interceptor) => {
-      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
-      if (typeof interceptor === 'function' && interceptor.length === 1) {
-        const factory = interceptor as (
-          instance: GvrayInstance
-        ) =>
-          | [GvrayResponseInterceptor, GvrayErrorInterceptor]
-          | [GvrayResponseInterceptor]
-          | GvrayResponseInterceptor;
-        const result = factory(this.requestInstance!);
-        if (Array.isArray(result)) {
-          const [success, fail] = result;
-          this.requestInstance?.interceptors.response.use(success, fail);
-        } else {
-          this.requestInstance?.interceptors.response.use(result);
-        }
-      } else if (Array.isArray(interceptor)) {
-        const [success, fail] = interceptor;
-        this.requestInstance?.interceptors.response.use(success, fail);
-      } else if (typeof interceptor === 'function') {
-        // 普通的响应拦截器函数
-        this.requestInstance?.interceptors.response.use(interceptor as GvrayResponseInterceptor);
-      }
+      registerResponseInterceptor(interceptor, this.requestInstance!);
     });
 
     // 当响应的数据 success 是 false 的时候，抛出 error 以供 errorHandler 处理。
@@ -202,51 +162,11 @@ class RequestClient {
     } = opts || this.requestOptions || {};
 
     const requestInterceptorsToEject = requestInterceptors?.map((interceptor): number => {
-      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
-      if (typeof interceptor === 'function' && interceptor.length === 1) {
-        const factory = interceptor as (
-          instance: GvrayInstance
-        ) =>
-          | [GvrayRequestInterceptor, GvrayErrorInterceptor]
-          | [GvrayRequestInterceptor]
-          | GvrayRequestInterceptor;
-        const result = factory(requestInstance);
-        if (Array.isArray(result)) {
-          const [success, fail] = result;
-          return requestInstance.interceptors.request.use(success, fail);
-        } else {
-          return requestInstance.interceptors.request.use(result);
-        }
-      } else if (Array.isArray(interceptor)) {
-        const [success, fail] = interceptor;
-        return requestInstance.interceptors.request.use(success, fail);
-      } else {
-        return requestInstance.interceptors.request.use(interceptor as GvrayRequestInterceptor);
-      }
+      return registerRequestInterceptor(interceptor, requestInstance);
     });
 
     const responseInterceptorsToEject = responseInterceptors?.map((interceptor): number => {
-      // 如果是函数且有一个参数（拦截器工厂函数），调用它并传入 instance
-      if (typeof interceptor === 'function' && interceptor.length === 1) {
-        const factory = interceptor as (
-          instance: GvrayInstance
-        ) =>
-          | [GvrayResponseInterceptor, GvrayErrorInterceptor]
-          | [GvrayResponseInterceptor]
-          | GvrayResponseInterceptor;
-        const result = factory(requestInstance);
-        if (Array.isArray(result)) {
-          const [success, fail] = result;
-          return requestInstance.interceptors.response.use(success, fail);
-        } else {
-          return requestInstance.interceptors.response.use(result);
-        }
-      } else if (Array.isArray(interceptor)) {
-        const [success, fail] = interceptor;
-        return requestInstance.interceptors.response.use(success, fail);
-      } else {
-        return requestInstance.interceptors.response.use(interceptor as GvrayResponseInterceptor);
-      }
+      return registerResponseInterceptor(interceptor, requestInstance);
     });
 
     return new Promise<T | GvrayResponse<T>>((resolve, reject) => {
@@ -283,4 +203,4 @@ class RequestClient {
   }
 }
 
-export default RequestClient;
+export default GvrayRequest;

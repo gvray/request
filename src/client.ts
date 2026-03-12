@@ -1,4 +1,4 @@
-import RequestClient from './core/GvrayRequest';
+import GvrayRequest from './core/GvrayRequest';
 import type {
   GvrayConfig,
   GvrayRequestConfig,
@@ -10,7 +10,7 @@ import type {
  * Initialize the global request client. After calling this, `request` can be used directly.
  */
 const createClient = (options: GvrayConfig): void => {
-  RequestClient.getRequestClient(options);
+  GvrayRequest.getRequestClient(options);
 };
 
 /**
@@ -18,7 +18,7 @@ const createClient = (options: GvrayConfig): void => {
  * Useful for multi-token or multi-baseURL scenarios.
  */
 const createRequest = (options: GvrayConfig) => {
-  const client = new RequestClient(options);
+  const client = new GvrayRequest(options);
   function req<T = any>(
     url: string,
     opts: GvrayRequestConfigWithResponse
@@ -30,4 +30,4 @@ const createRequest = (options: GvrayConfig) => {
   return req;
 };
 
-export { createClient, createRequest, RequestClient };
+export { createClient, createRequest, GvrayRequest };

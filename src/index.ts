@@ -1,5 +1,5 @@
 export * from './types';
-export { RequestClient, createClient, createRequest } from './client';
+export { GvrayRequest, createClient, createRequest } from './client';
 export { request, getClient, requestSafe } from './request';
 export type { GvrayResult } from './types';
 export { errorConfig } from './requestErrorConfig';

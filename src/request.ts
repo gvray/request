@@ -1,4 +1,4 @@
-import RequestClient from './core/GvrayRequest';
+import GvrayRequest from './core/GvrayRequest';
 import type {
   GvrayRequestConfig,
   GvrayRequestConfigWithResponse,
@@ -7,7 +7,7 @@ import type {
 } from './types';
 
 export const getClient = () => {
-  return RequestClient.requestClient;
+  return GvrayRequest.requestClient;
 };
 
 export function request<T = any>(

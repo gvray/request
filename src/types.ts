@@ -234,7 +234,17 @@ export interface InterceptorPreset {
   };
   jsonContentType?: boolean;
   withCredentials?: boolean;
-  authRefresh?: {
+  // 请求拦截器：前端主动判断 token 过期
+  requestAuthRefresh?: {
+    getToken: () => MaybePromise<string | null | undefined>;
+    refreshToken: () => Promise<string | null | undefined>;
+    setToken?: (token: string) => Promise<void> | void;
+    header?: string;
+    scheme?: string;
+    exclude?: Array<string | RegExp> | ((url?: string, options?: GvrayRequestConfig) => boolean);
+  };
+  // 响应拦截器：后端返回 401/403 时刷新
+  responseAuthRefresh?: {
     refreshToken: () => Promise<string | null | undefined>;
     setToken?: (token: string) => Promise<void> | void;
     getToken?: () => Promise<string | null | undefined>;
