@@ -94,9 +94,18 @@ function createRetryInterceptorImpl(
 
   const onError: GvrayErrorInterceptor = async (err: any) => {
     const error = err as GvrayError;
-    const config = (error.config || {}) as GvrayOptions & { _retryCount?: number };
+    const config = (error.config || {}) as GvrayOptions & {
+      _retryCount?: number;
+      _retry?: boolean;
+    };
 
     if (!error.config) {
+      return Promise.reject(error);
+    }
+
+    // 如果请求已经被 authRefresh 拦截器处理过，不再重试
+    // 避免与 authRefresh 拦截器冲突
+    if (config._retry) {
       return Promise.reject(error);
     }
 
