@@ -1,13 +1,13 @@
 import type {
-  HttpRequestInterceptor,
-  HttpInstance,
+  GvrayRequestInterceptor,
+  GvrayInstance,
   MaybePromise,
-  HttpResponseInterceptor,
-  HttpErrorInterceptor,
-  HttpError,
-  HttpOptions,
-  HttpResponse,
-  HttpHeaders,
+  GvrayResponseInterceptor,
+  GvrayErrorInterceptor,
+  GvrayError,
+  GvrayOptions,
+  GvrayResponse,
+  GvrayRequestHeaders,
 } from '../types';
 
 // 返回字符串或异步字符串的提供者类型
@@ -20,15 +20,15 @@ export function bearerAuth(
   getToken: StringProvider,
   header = 'Authorization',
   scheme = 'Bearer',
-  exclude?: Array<string | RegExp> | ((url?: string, options?: Record<string, unknown>) => boolean)
-): HttpRequestInterceptor {
+  exclude?: Array<string | RegExp> | ((url?: string, options?: Record<string, any>) => boolean)
+): GvrayRequestInterceptor {
   return async (config) => {
     const url = config.url as string | undefined;
 
     // 判断是否需要跳过设置 Authorization
     let shouldExclude = false;
     if (typeof exclude === 'function') {
-      shouldExclude = exclude(url, config as Record<string, unknown>) === true;
+      shouldExclude = exclude(url, config as Record<string, any>) === true;
     } else if (Array.isArray(exclude) && url) {
       shouldExclude = exclude.some((rule) =>
         typeof rule === 'string' ? url.includes(rule) : !!url.match(rule as RegExp)
@@ -40,7 +40,7 @@ export function bearerAuth(
 
     const token = await getToken();
     if (token) {
-      const headers: HttpHeaders = { ...(config.headers || {}) };
+      const headers: GvrayRequestHeaders = { ...(config.headers || {}) };
       headers[header] = `${scheme} ${token}`;
       return { ...config, headers };
     }
@@ -69,10 +69,10 @@ type RefreshState = 'idle' | 'refreshing' | 'failed';
 
 // 等待队列中的请求项
 interface PendingRequest {
-  config: HttpOptions & { _retry?: boolean };
-  error: HttpError;
-  resolve: (value: HttpResponse | PromiseLike<HttpResponse>) => void;
-  reject: (reason: HttpError) => void;
+  config: GvrayOptions & { _retry?: boolean };
+  error: GvrayError;
+  resolve: (value: GvrayResponse | PromiseLike<GvrayResponse>) => void;
+  reject: (reason: GvrayError) => void;
 }
 
 /**
@@ -91,33 +91,33 @@ interface PendingRequest {
 // 重载 1：只传 options，返回一个接受 instance 的函数（用于手动配置）
 export function createAuthRefreshInterceptor(
   options: AuthRefreshOptions
-): (instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor];
+): (instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 重载 2：传 options 和 instance，直接返回拦截器（用于 Preset）
 export function createAuthRefreshInterceptor(
   options: AuthRefreshOptions,
-  instance: HttpInstance
-): [HttpResponseInterceptor, HttpErrorInterceptor];
+  instance: GvrayInstance
+): [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 实现
 export function createAuthRefreshInterceptor(
   options: AuthRefreshOptions,
-  instance?: HttpInstance
+  instance?: GvrayInstance
 ):
-  | [HttpResponseInterceptor, HttpErrorInterceptor]
-  | ((instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor]) {
+  | [GvrayResponseInterceptor, GvrayErrorInterceptor]
+  | ((instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor]) {
   if (instance) {
     // 重载 2：createAuthRefreshInterceptor(options, instance)
     return createInterceptorImpl(options, instance);
   } else {
     // 重载 1：createAuthRefreshInterceptor(options)
-    return (instance: HttpInstance) => createInterceptorImpl(options, instance);
+    return (instance: GvrayInstance) => createInterceptorImpl(options, instance);
   }
 }
 
 // 实际的拦截器实现
 function createInterceptorImpl(
   options: AuthRefreshOptions,
-  instance: HttpInstance
-): [HttpResponseInterceptor, HttpErrorInterceptor] {
+  instance: GvrayInstance
+): [GvrayResponseInterceptor, GvrayErrorInterceptor] {
   const {
     refreshToken,
     setToken,
@@ -140,7 +140,7 @@ function createInterceptorImpl(
   /**
    * 处理等待队列中的所有请求
    */
-  const processQueue = async (token: string | null | undefined, error?: HttpError) => {
+  const processQueue = async (token: string | null | undefined, error?: GvrayError) => {
     const queue = [...pendingQueue];
     pendingQueue = [];
 
@@ -156,7 +156,7 @@ function createInterceptorImpl(
     for (const pending of queue) {
       try {
         const headers: Record<string, string> = {};
-        const existingHeaders = pending.config.headers as Record<string, unknown> | undefined;
+        const existingHeaders = pending.config.headers as Record<string, any> | undefined;
         if (existingHeaders) {
           for (const [key, value] of Object.entries(existingHeaders)) {
             if (typeof value === 'string') headers[key] = value;
@@ -166,14 +166,14 @@ function createInterceptorImpl(
         pending.config.headers = headers;
 
         // Retry through the engine instance (respects engine choice and interceptor chain)
-        const retryConfig: HttpOptions = {
-          ...(pending.config as Record<string, unknown>),
+        const retryConfig: GvrayOptions = {
+          ...(pending.config as Record<string, any>),
           skipAuth: true,
         };
         const response = await instance.request(retryConfig);
         pending.resolve(response);
       } catch (retryError) {
-        pending.reject(retryError as HttpError);
+        pending.reject(retryError as GvrayError);
       }
     }
   };
@@ -223,22 +223,22 @@ function createInterceptorImpl(
     }, 100);
   };
 
-  const onResponse: HttpResponseInterceptor = (response) => response;
+  const onResponse: GvrayResponseInterceptor = (response) => response;
 
-  const onError: HttpErrorInterceptor = (err: unknown) => {
-    const error = err as HttpError;
+  const onError: GvrayErrorInterceptor = (err: any) => {
+    const error = err as GvrayError;
     const status = error.response?.status;
-    const originalConfig = (error.config || {}) as HttpOptions & { _retry?: boolean };
+    const originalConfig = (error.config || {}) as GvrayOptions & { _retry?: boolean };
 
     // 非目标状态码，直接拒绝
     if (!status || !statuses.includes(status)) {
-      return Promise.reject(error) as Promise<HttpError>;
+      return Promise.reject(error) as Promise<GvrayError>;
     }
 
     // 已经是重试过的请求，说明新 token 也失效了，放弃重试
     if (originalConfig._retry) {
       safeLoginRedirect();
-      return Promise.reject(error) as Promise<HttpError>;
+      return Promise.reject(error) as Promise<GvrayError>;
     }
 
     // 标记此请求已经尝试过刷新
@@ -246,11 +246,11 @@ function createInterceptorImpl(
 
     // 如果刷新已经失败，直接拒绝（防止在失败状态下继续堆积请求）
     if (refreshState === 'failed') {
-      return Promise.reject(error) as Promise<HttpError>;
+      return Promise.reject(error) as Promise<GvrayError>;
     }
 
     // 返回一个 Promise，将请求加入队列或立即处理
-    return new Promise<HttpResponse>((resolve, reject) => {
+    return new Promise<GvrayResponse>((resolve, reject) => {
       // 将请求加入等待队列
       const pendingRequest: PendingRequest = {
         config: originalConfig,
@@ -299,7 +299,7 @@ function createInterceptorImpl(
           // 错误已通过 processQueue 传递给各个请求的 reject
           return null;
         });
-    }) as Promise<HttpResponse>;
+    }) as Promise<GvrayResponse>;
   };
 
   return [onResponse, onError];

@@ -3,23 +3,23 @@
 // User code should NEVER import axios/fetch types directly.
 
 /** Unified response structure */
-export interface HttpResponse<T = unknown> {
+export interface GvrayResponse<T = any> {
   data: T;
   status: number;
   statusText: string;
   headers: Record<string, string>;
-  config: HttpOptions;
+  config: GvrayOptions;
 }
 
 /** Unified error structure */
-export interface HttpError extends Error {
-  config?: HttpOptions;
+export interface GvrayError extends Error {
+  config?: GvrayOptions;
   code?: string;
-  request?: unknown;
+  request?: any;
   response?: {
     status: number;
     statusText: string;
-    data: unknown;
+    data: any;
     headers: Record<string, string>;
   };
   isRequestError?: boolean;
@@ -28,7 +28,7 @@ export interface HttpError extends Error {
 /**
  * ResponseType - 支持的响应类型
  * - 'arraybuffer', 'blob', 'json', 'text', 'formdata': axios 和 fetch 都支持
- * - 'document': 只有 axios (XMLHttpRequest) 支持
+ * - 'document': 只有 axios (XMLGvrayRequest) 支持
  * - 'stream': 只有 Node.js 环境的 axios 支持
  * @default 'json'
  */
@@ -66,11 +66,11 @@ export type Method =
 export type Milliseconds = number;
 
 /**
- * BaseRequestConfig - axios 和 fetch 引擎的交集
+ * GvrayRequestConfig - axios 和 fetch 引擎的交集
  * 只包含创建客户端的全局配置（默认值）
  * 注意：不包含请求特定字段（url, method, headers, params, data, signal），这些在运行时传递
  */
-export interface BaseRequestConfig {
+export interface GvrayRequestConfig {
   baseURL?: string;
   timeout?: Milliseconds;
   withCredentials?: boolean;
@@ -78,12 +78,12 @@ export interface BaseRequestConfig {
 }
 
 /**
- * HTTP Headers - 参考 axios 的设计，取其精华
+ * HTTP Headers
  */
-export type HttpHeaderValue = string | string[] | number | boolean | null;
+export type HeaderValue = string | string[] | number | boolean | null;
 
-export interface RawHttpHeaders {
-  [key: string]: HttpHeaderValue;
+export interface RawHeaders {
+  [key: string]: HeaderValue;
 }
 
 // 常用请求头列表
@@ -96,7 +96,7 @@ type CommonRequestHeadersList =
 
 // Content-Type 常用值（提供智能提示）
 type ContentType =
-  | HttpHeaderValue
+  | HeaderValue
   | 'text/html'
   | 'text/plain'
   | 'multipart/form-data'
@@ -105,28 +105,20 @@ type ContentType =
   | 'application/octet-stream';
 
 /**
- * RawHttpRequestHeaders - 提供常用请求头的类型提示
- * 参考 axios 的 RawAxiosRequestHeaders 设计
+ * RawRequestHeaders - 提供常用请求头的类型提示
  */
-export type RawHttpRequestHeaders = Partial<
-  RawHttpHeaders & {
-    [Key in CommonRequestHeadersList]: HttpHeaderValue;
+export type RawRequestHeaders = Partial<
+  RawHeaders & {
+    [Key in CommonRequestHeadersList]: HeaderValue;
   } & {
     'Content-Type': ContentType;
   }
 >;
 
 /**
- * HttpRequestHeaders - 请求头类型
- * 参考 axios 的 AxiosRequestHeaders = RawAxiosRequestHeaders & AxiosHeaders
- * 我们简化为直接使用 RawHttpRequestHeaders
+ * GvrayRequestHeaders - 请求头类型
  */
-export type HttpRequestHeaders = RawHttpRequestHeaders;
-
-/**
- * HttpHeaders - 请求头类型别名（向后兼容）
- */
-export type HttpHeaders = HttpRequestHeaders;
+export type GvrayRequestHeaders = RawRequestHeaders;
 
 // 常用响应头列表
 type CommonResponseHeadersList =
@@ -138,18 +130,18 @@ type CommonResponseHeadersList =
   | 'Set-Cookie';
 
 /**
- * RawHttpResponseHeaders - 提供常用响应头的类型提示
+ * RawResponseHeaders - 提供常用响应头的类型提示
  */
-export type RawHttpResponseHeaders = Partial<
-  RawHttpHeaders & {
-    [Key in CommonResponseHeadersList]: HttpHeaderValue;
+export type RawResponseHeaders = Partial<
+  RawHeaders & {
+    [Key in CommonResponseHeadersList]: HeaderValue;
   }
 >;
 
 /**
- * HttpResponseHeaders - 响应头类型
+ * GvrayResponseHeaders - 响应头类型
  */
-export type HttpResponseHeaders = RawHttpResponseHeaders;
+export type GvrayResponseHeaders = RawResponseHeaders;
 
 /** Engine type */
 export type Engine = 'axios' | 'fetch';
@@ -161,36 +153,36 @@ export type Engine = 'axios' | 'fetch';
  */
 export type MaybePromise<T> = T | Promise<T>;
 
-export type HttpRequestInterceptor = (
-  config: HttpRequestOptions
-) => MaybePromise<HttpRequestOptions>;
+export type GvrayRequestInterceptor = (
+  config: GvrayRequestConfig
+) => MaybePromise<GvrayRequestConfig>;
 
-export type HttpErrorInterceptor = (error: unknown) => MaybePromise<unknown>;
-export type HttpResponseInterceptor = <T = unknown>(
-  response: HttpResponse<T>
-) => MaybePromise<HttpResponse<T>>;
+export type GvrayErrorInterceptor = (error: any) => MaybePromise<any>;
+export type GvrayResponseInterceptor = <T = any>(
+  response: GvrayResponse<T>
+) => MaybePromise<GvrayResponse<T>>;
 
-export type HttpRequestInterceptorConfig =
-  | [HttpRequestInterceptor, HttpErrorInterceptor]
-  | [HttpRequestInterceptor]
-  | HttpRequestInterceptor
-  | ((instance: HttpInstance) => [HttpRequestInterceptor, HttpErrorInterceptor])
-  | ((instance: HttpInstance) => [HttpRequestInterceptor])
-  | ((instance: HttpInstance) => HttpRequestInterceptor);
-export type HttpResponseInterceptorConfig =
-  | [HttpResponseInterceptor, HttpErrorInterceptor]
-  | [HttpResponseInterceptor]
-  | HttpResponseInterceptor
-  | ((instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor])
-  | ((instance: HttpInstance) => [HttpResponseInterceptor])
-  | ((instance: HttpInstance) => HttpResponseInterceptor);
+export type GvrayRequestInterceptorConfig =
+  | [GvrayRequestInterceptor, GvrayErrorInterceptor]
+  | [GvrayRequestInterceptor]
+  | GvrayRequestInterceptor
+  | ((instance: GvrayInstance) => [GvrayRequestInterceptor, GvrayErrorInterceptor])
+  | ((instance: GvrayInstance) => [GvrayRequestInterceptor])
+  | ((instance: GvrayInstance) => GvrayRequestInterceptor);
+export type GvrayResponseInterceptorConfig =
+  | [GvrayResponseInterceptor, GvrayErrorInterceptor]
+  | [GvrayResponseInterceptor]
+  | GvrayResponseInterceptor
+  | ((instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor])
+  | ((instance: GvrayInstance) => [GvrayResponseInterceptor])
+  | ((instance: GvrayInstance) => GvrayResponseInterceptor);
 
 // ─── Error handling ──────────────────────────────────────────────────────────
 
-export interface HttpErrorHandler {
+export interface ErrorHandler {
   (
-    error: HttpError,
-    opts: HttpRequestOptions,
+    error: GvrayError,
+    opts: GvrayRequestConfig,
     feedback?: (errorInfo: ErrorFeedbackInfo) => void
   ): void;
 }
@@ -216,25 +208,25 @@ export type ErrorFeedbackInfo = {
   errorType: ErrorType;
   message: string;
   code?: number;
-  error?: HttpError;
+  error?: GvrayError;
 };
 
 export type ErrorFeedback = (errorInfo: ErrorFeedbackInfo) => void;
 
-export interface ErrorConfig<TErrorData = unknown> {
-  errorHandler?: HttpErrorHandler;
+export interface ErrorConfig<TErrorData = any> {
+  errorHandler?: ErrorHandler;
   errorThrower?: (res: TErrorData) => void;
   errorFeedback?: ErrorFeedback;
 }
 
 // ─── Preset (built-in interceptor config) ────────────────────────────────────
 
-export interface Preset {
+export interface InterceptorPreset {
   bearerAuth?: {
     getToken: () => MaybePromise<string | null | undefined>;
     header?: string;
     scheme?: string;
-    exclude?: Array<string | RegExp> | ((url?: string, options?: HttpRequestOptions) => boolean);
+    exclude?: Array<string | RegExp> | ((url?: string, options?: GvrayRequestConfig) => boolean);
   };
   acceptLanguage?: {
     getLocale: () => MaybePromise<string | null | undefined>;
@@ -256,8 +248,8 @@ export interface Preset {
     retryDelay?: number;
     exponentialBackoff?: boolean;
     retryableStatuses?: number[];
-    retryCondition?: (error: HttpError) => boolean;
-    onRetry?: (retryCount: number, error: HttpError, config: HttpOptions) => void;
+    retryCondition?: (error: GvrayError) => boolean;
+    onRetry?: (retryCount: number, error: GvrayError, config: GvrayOptions) => void;
   };
   logging?:
     | {
@@ -280,116 +272,124 @@ export interface Preset {
 
 // ─── Client / Request config ─────────────────────────────────────────────────
 
-// 创建期配置（客户端级）
-export interface ClientConfig<TErrorData = any> extends BaseRequestConfig {
-  engine?: Engine;
-  errorConfig?: ErrorConfig<TErrorData>;
-  requestInterceptors?: HttpRequestInterceptorConfig[];
-  responseInterceptors?: HttpResponseInterceptorConfig[];
-  preset?: Preset;
-}
-
-export type HttpConfig<TErrorData = any> = ClientConfig<TErrorData>;
-
 /**
- * RuntimeRequestConfig - 运行时请求配置
- * 直接继承 BaseRequestConfig，不关联 ClientConfig
- * 添加运行时才需要的字段（url, method, headers, params, data, signal）
+ * RuntimeControlFields - 运行时控制字段
+ * 用于拦截器内部状态管理和流程控制
  */
-export interface RuntimeRequestConfig<D = any> extends BaseRequestConfig {
-  url?: string; // 请求 URL
-  method?: Method | string; // 请求方法
-  headers?: HttpHeaders; // 请求头
-  params?: any; // 查询参数
-  data?: D; // 请求体数据
-  signal?: AbortSignal; // 取消信号
-}
-
-/**
- * HttpRequestOptions - 运行时请求配置
- * 包含运行时专属字段（如 skipAuth, _retry 等）
- */
-export interface HttpRequestOptions<D = any> extends RuntimeRequestConfig<D> {
+export interface RuntimeControlFields {
   skipErrorHandler?: boolean;
-  getResponse?: boolean;
-  requestInterceptors?: HttpRequestInterceptorConfig[];
-  responseInterceptors?: HttpResponseInterceptorConfig[];
-  // 运行时控制字段
   skipAuth?: boolean;
+  getResponse?: boolean;
   _retry?: boolean;
 }
 
-export type HttpOptions = HttpRequestOptions;
+/**
+ * GvrayRequestConfig - 请求配置（所有请求共有的字段）
+ */
+export interface GvrayRequestConfig<D = any> extends RuntimeControlFields {
+  // 基础配置
+  baseURL?: string;
+  timeout?: Milliseconds;
+  withCredentials?: boolean;
+  responseType?: ResponseType;
+  // 请求字段
+  url?: string;
+  method?: Method | string;
+  headers?: GvrayRequestHeaders;
+  params?: any;
+  data?: D;
+  signal?: AbortSignal;
+  // 运行时拦截器
+  requestInterceptors?: GvrayRequestInterceptorConfig[];
+  responseInterceptors?: GvrayResponseInterceptorConfig[];
+  // 索引签名，用于兼容引擎特定字段和用户自定义字段
+  [key: string]: any;
+}
 
-export interface HttpRequestOptionsWithResponse extends HttpRequestOptions {
+/**
+ * GvrayConfig - 创建客户端时的配置
+ * 在 GvrayRequestConfig 基础上增加客户端级别的配置
+ */
+export interface GvrayConfig<TErrorData = any> extends GvrayRequestConfig {
+  engine?: Engine;
+  errorConfig?: ErrorConfig<TErrorData>;
+  preset?: InterceptorPreset;
+}
+
+/**
+ * GvrayOptions - GvrayRequestConfig 的别名
+ */
+export type GvrayOptions<D = any> = GvrayRequestConfig<D>;
+
+export interface GvrayRequestConfigWithResponse extends GvrayRequestConfig {
   getResponse: true;
 }
 
-export interface HttpRequestOptionsWithoutResponse extends HttpRequestOptions {
+export interface GvrayRequestConfigWithoutResponse extends GvrayRequestConfig {
   getResponse: false;
 }
 
-export interface HttpRequest {
-  <T = unknown>(url: string, opts: HttpRequestOptionsWithResponse): Promise<HttpResponse<T>>;
-  <T = unknown>(url: string, opts: HttpRequestOptionsWithoutResponse): Promise<T>;
-  <T = unknown>(url: string, opts: HttpRequestOptions): Promise<T>;
-  <T = unknown>(url: string): Promise<T>;
+export interface GvrayRequest {
+  <T = any>(url: string, opts: GvrayRequestConfigWithResponse): Promise<GvrayResponse<T>>;
+  <T = any>(url: string, opts: GvrayRequestConfigWithoutResponse): Promise<T>;
+  <T = any>(url: string, opts: GvrayRequestConfig): Promise<T>;
+  <T = any>(url: string): Promise<T>;
 }
 
-export type HttpResult<T = unknown> = {
+export type GvrayResult<T = any> = {
   data?: T;
-  error?: unknown;
-  response?: HttpResponse<T>;
+  error?: any;
+  response?: GvrayResponse<T>;
 };
 
 // ─── Http instance ──────────────────────────────────────────────────────────
-// HttpInstance defines the common structural contract that both AxiosInstance
+// GvrayInstance defines the common structural contract that both AxiosInstance
 // and FetchInstance satisfy. Adapters cast their native instance to this type
 // at the boundary, keeping the internal API engine-agnostic.
 //
 // The shape is derived from AxiosInstance / FetchInstance so it stays grounded
 // to real engine implementations rather than drifting.
 
-export interface HttpInstance {
+export interface GvrayInstance {
   // Callable signatures — mirrors AxiosInstance
-  <T = unknown>(config: HttpOptions): Promise<HttpResponse<T>>;
-  <T = unknown>(url: string, config?: HttpOptions): Promise<HttpResponse<T>>;
+  <T = any>(config: GvrayOptions): Promise<GvrayResponse<T>>;
+  <T = any>(url: string, config?: GvrayOptions): Promise<GvrayResponse<T>>;
 
   // Core request method
-  request<T = unknown>(config: HttpOptions): Promise<HttpResponse<T>>;
+  request<T = any>(config: GvrayOptions): Promise<GvrayResponse<T>>;
 
   // HTTP shortcut methods
-  get<T = unknown>(url: string, config?: HttpOptions): Promise<HttpResponse<T>>;
-  delete<T = unknown>(url: string, config?: HttpOptions): Promise<HttpResponse<T>>;
-  head<T = unknown>(url: string, config?: HttpOptions): Promise<HttpResponse<T>>;
-  options<T = unknown>(url: string, config?: HttpOptions): Promise<HttpResponse<T>>;
-  post<T = unknown>(url: string, data?: unknown, config?: HttpOptions): Promise<HttpResponse<T>>;
-  put<T = unknown>(url: string, data?: unknown, config?: HttpOptions): Promise<HttpResponse<T>>;
-  patch<T = unknown>(url: string, data?: unknown, config?: HttpOptions): Promise<HttpResponse<T>>;
+  get<T = any>(url: string, config?: GvrayOptions): Promise<GvrayResponse<T>>;
+  delete<T = any>(url: string, config?: GvrayOptions): Promise<GvrayResponse<T>>;
+  head<T = any>(url: string, config?: GvrayOptions): Promise<GvrayResponse<T>>;
+  options<T = any>(url: string, config?: GvrayOptions): Promise<GvrayResponse<T>>;
+  post<T = any>(url: string, data?: any, config?: GvrayOptions): Promise<GvrayResponse<T>>;
+  put<T = any>(url: string, data?: any, config?: GvrayOptions): Promise<GvrayResponse<T>>;
+  patch<T = any>(url: string, data?: any, config?: GvrayOptions): Promise<GvrayResponse<T>>;
 
   // Interceptors
   interceptors: {
     request: {
       use(
-        fulfilled?: ((config: HttpOptions) => HttpOptions | Promise<HttpOptions>) | null,
-        rejected?: ((error: unknown) => unknown) | null
+        fulfilled?: ((config: GvrayOptions) => GvrayOptions | Promise<GvrayOptions>) | null,
+        rejected?: ((error: any) => unknown) | null
       ): number;
       eject(id: number): void;
     };
     response: {
       use(
-        fulfilled?: ((response: HttpResponse) => HttpResponse | Promise<HttpResponse>) | null,
-        rejected?: ((error: unknown) => unknown) | null
+        fulfilled?: ((response: GvrayResponse) => GvrayResponse | Promise<GvrayResponse>) | null,
+        rejected?: ((error: any) => unknown) | null
       ): number;
       eject(id: number): void;
     };
   };
 
   // Defaults
-  defaults: HttpOptions;
+  defaults: GvrayOptions;
 }
 
-export interface HttpAdapter {
-  create(options: HttpOptions): HttpInstance;
-  request<T = unknown>(options: HttpOptions): Promise<T>;
+export interface GvrayAdapter {
+  create(options: GvrayOptions): GvrayInstance;
+  request<T = any>(options: GvrayOptions): Promise<T>;
 }

@@ -1,16 +1,15 @@
 import RequestClient from './core/RequestClient';
 import type {
-  ClientConfig,
-  HttpConfig,
-  HttpRequestOptions,
-  HttpRequestOptionsWithResponse,
-  HttpResponse,
+  GvrayConfig,
+  GvrayRequestConfig,
+  GvrayRequestConfigWithResponse,
+  GvrayResponse,
 } from './types';
 
 /**
  * Initialize the global request client. After calling this, `request` can be used directly.
  */
-const createClient = (options: ClientConfig): void => {
+const createClient = (options: GvrayConfig): void => {
   RequestClient.getRequestClient(options);
 };
 
@@ -18,14 +17,14 @@ const createClient = (options: ClientConfig): void => {
  * Create an independent request function with its own configuration.
  * Useful for multi-token or multi-baseURL scenarios.
  */
-const createRequest = (options: HttpConfig) => {
+const createRequest = (options: GvrayConfig) => {
   const client = new RequestClient(options);
   function req<T = any>(
     url: string,
-    opts: HttpRequestOptionsWithResponse
-  ): Promise<HttpResponse<T>>;
-  function req<T = any>(url: string, opts?: HttpRequestOptions): Promise<T>;
-  function req<T = any>(url: string, opts: HttpRequestOptions = { method: 'GET' }) {
+    opts: GvrayRequestConfigWithResponse
+  ): Promise<GvrayResponse<T>>;
+  function req<T = any>(url: string, opts?: GvrayRequestConfig): Promise<T>;
+  function req<T = any>(url: string, opts: GvrayRequestConfig = { method: 'GET' }) {
     return client.request<T>(url, opts);
   }
   return req;

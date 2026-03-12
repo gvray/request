@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createCacheInterceptor, cache, MemoryCacheStorage } from '../../src/interceptor/cache';
-import type { HttpRequestOptions, HttpResponse } from '../../src/types';
+import type { GvrayRequestConfig, GvrayResponse } from '../../src/types';
 
 describe('createCacheInterceptor', () => {
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('createCacheInterceptor', () => {
   it('should skip caching for non-GET requests by default', async () => {
     const { request } = createCacheInterceptor();
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'POST',
       headers: {},
@@ -40,7 +40,7 @@ describe('createCacheInterceptor', () => {
       exclude: ['/api/no-cache'],
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/no-cache/data',
       method: 'GET',
       headers: {},
@@ -56,7 +56,7 @@ describe('createCacheInterceptor', () => {
       exclude: [/\/api\/live\/.*/],
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/live/stream',
       method: 'GET',
       headers: {},
@@ -77,7 +77,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() + 300000,
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -99,7 +99,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() + 300000,
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -124,7 +124,7 @@ describe('createCacheInterceptor', () => {
     };
     await storage.set(cacheKey, cacheEntry);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -142,7 +142,7 @@ describe('createCacheInterceptor', () => {
     const onCacheMiss = vi.fn();
     const { request } = createCacheInterceptor({ onCacheMiss });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -159,7 +159,7 @@ describe('createCacheInterceptor', () => {
     const onCacheMiss = vi.fn();
     const { request } = createCacheInterceptor({ keyGenerator, onCacheMiss });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -176,7 +176,7 @@ describe('createCacheInterceptor', () => {
     const [onResponse] = response;
 
     // First request - cache miss
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -189,7 +189,7 @@ describe('createCacheInterceptor', () => {
       data: { users: [] },
       status: 200,
       config: processedConfig,
-    } as HttpResponse;
+    } as GvrayResponse;
 
     await onResponse(mockResponse);
 
@@ -212,7 +212,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() + 300000,
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -235,7 +235,7 @@ describe('createCacheInterceptor', () => {
       expiresAt: Date.now() - 300000, // Already expired
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},

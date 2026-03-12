@@ -1,30 +1,30 @@
 import axios from 'axios';
-import type { AxiosInstance } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Adapter } from '../Adapter';
-import type { HttpInstance, HttpOptions } from '../../types';
+import type { GvrayInstance, GvrayOptions } from '../../types';
 
 /**
- * Axios adapter — wraps axios internals behind the unified HttpInstance interface.
+ * Axios adapter — wraps axios internals behind the unified GvrayInstance interface.
  * Axios-specific types (AxiosResponse, AxiosError, etc.) are NOT exported.
  */
 export class AxiosAdapter extends Adapter {
   private instance: AxiosInstance | null = null;
 
-  create(options: HttpOptions): HttpInstance {
+  create(options: GvrayOptions): GvrayInstance {
     // Cast our unified config to axios-compatible config at the boundary
-    this.instance = axios.create(options as any);
-    return this.instance as unknown as HttpInstance;
+    this.instance = axios.create(options as AxiosRequestConfig);
+    return this.instance as unknown as GvrayInstance;
   }
 
-  private ensureInstance(options?: HttpOptions): AxiosInstance {
+  private ensureInstance(options?: GvrayOptions): AxiosInstance {
     if (this.instance) return this.instance;
-    this.instance = axios.create((options || {}) as any);
+    this.instance = axios.create((options || {}) as AxiosRequestConfig);
     return this.instance;
   }
 
-  async request<T = unknown>(options: HttpOptions): Promise<T> {
+  async request<T = any>(options: GvrayOptions): Promise<T> {
     const inst = this.ensureInstance(options);
-    const res = await inst.request(options as any);
+    const res = await inst.request(options as AxiosRequestConfig);
     return options?.getResponse ? (res as unknown as T) : (res.data as T);
   }
 }

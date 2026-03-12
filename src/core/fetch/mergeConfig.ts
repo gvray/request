@@ -25,8 +25,8 @@ export function mergeConfig<D = unknown>(
       !Array.isArray(val)
     ) {
       merged[key] = {
-        ...((defaults[key] as Record<string, unknown>) || {}),
-        ...(val as Record<string, unknown>),
+        ...((defaults[key] as Record<string, any>) || {}),
+        ...(val as Record<string, any>),
       };
     } else {
       merged[key] = val;

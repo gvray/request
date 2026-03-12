@@ -3,7 +3,7 @@ import {
   ErrorShowType,
   type BusinessError,
   type ErrorConfig,
-  type HttpRequestOptions,
+  type GvrayRequestConfig,
 } from './types';
 
 interface ErrorThrowerPayload {
@@ -30,7 +30,7 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
   // Accept errors thrown by errorThrower.
   errorHandler: (
     error: any,
-    opts: HttpRequestOptions,
+    opts: GvrayRequestConfig,
     feedBack?: (errorInfo: ErrorFeedbackInfo) => void
   ) => {
     if (opts?.skipErrorHandler) throw error;
@@ -133,7 +133,7 @@ export const errorConfig: ErrorConfig<ErrorThrowerPayload> = {
       }
     } else if (error.request) {
       // The request was successfully sent, but no response was received.
-      // \`error.request\` is an instance of XMLHttpRequest in the browser,
+      // \`error.request\` is an instance of XMLGvrayRequest in the browser,
       // and an instance of http.ClientRequest in node.js.
       if (feedBack) {
         feedBack({

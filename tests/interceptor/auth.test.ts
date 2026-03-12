@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { bearerAuth, createAuthRefreshInterceptor } from '../../src/interceptor/auth';
-import type { HttpRequestOptions, HttpInstance } from '../../src/types';
+import type { GvrayRequestConfig, GvrayInstance } from '../../src/types';
 
-function createMockInstance(overrides: Partial<HttpInstance> = {}): HttpInstance {
+function createMockInstance(overrides: Partial<GvrayInstance> = {}): GvrayInstance {
   return {
     request: vi
       .fn()
       .mockResolvedValue({ data: {}, status: 200, statusText: 'OK', headers: {}, config: {} }),
     ...overrides,
-  } as unknown as HttpInstance;
+  } as unknown as GvrayInstance;
 }
 
 describe('bearerAuth', () => {
@@ -20,7 +20,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -36,7 +36,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('my-token');
     const interceptor = bearerAuth(getToken, 'X-Auth-Token', 'Token');
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };
@@ -50,7 +50,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/login',
       headers: {},
       skipAuth: true,
@@ -66,7 +66,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', ['/public', '/auth']);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/public/data',
       headers: {},
     };
@@ -80,7 +80,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', [/^\/api\/public\/.*/]);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/public/resource',
       headers: {},
     };
@@ -95,7 +95,7 @@ describe('bearerAuth', () => {
     const excludeFn = vi.fn((url?: string) => url?.includes('/no-auth') ?? false);
     const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', excludeFn);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/no-auth/endpoint',
       headers: {},
     };
@@ -110,7 +110,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue(null);
     const interceptor = bearerAuth(getToken);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };
@@ -124,7 +124,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue(undefined);
     const interceptor = bearerAuth(getToken);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };
@@ -138,7 +138,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {
         'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ describe('bearerAuth', () => {
     const getToken = vi.fn().mockReturnValue('sync-token');
     const interceptor = bearerAuth(getToken);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };

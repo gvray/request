@@ -1,8 +1,8 @@
 import type {
-  HttpRequestInterceptor,
-  HttpErrorInterceptor,
-  HttpResponseInterceptor,
-  HttpError,
+  GvrayRequestInterceptor,
+  GvrayErrorInterceptor,
+  GvrayResponseInterceptor,
+  GvrayError,
 } from '../types';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none';
@@ -48,8 +48,8 @@ function shouldLog(currentLevel: LogLevel, targetLevel: LogLevel): boolean {
  * 记录请求和响应的详细信息
  */
 export function createLoggingInterceptor(options: LoggingOptions = {}): {
-  request: HttpRequestInterceptor;
-  response: [HttpResponseInterceptor, HttpErrorInterceptor];
+  request: GvrayRequestInterceptor;
+  response: [GvrayResponseInterceptor, GvrayErrorInterceptor];
 } {
   const {
     level = 'info',
@@ -68,7 +68,7 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
     logFn(...args);
   };
 
-  const requestInterceptor: HttpRequestInterceptor = (config) => {
+  const requestInterceptor: GvrayRequestInterceptor = (config) => {
     if (logRequest) {
       const method = String(config.method || 'GET').toUpperCase();
       const url = String(config.url || '');
@@ -81,18 +81,18 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
     }
 
     // 记录请求开始时间
-    (config as Record<string, unknown>)[timestampKey] = Date.now();
+    (config as Record<string, any>)[timestampKey] = Date.now();
 
     return config;
   };
 
-  const responseInterceptor: HttpResponseInterceptor = (response) => {
+  const responseInterceptor: GvrayResponseInterceptor = (response) => {
     if (logResponse) {
       const config = response.config;
       const method = String(config.method || 'GET').toUpperCase();
       const url = String(config.url || '');
       const status = response.status;
-      const startTime = (config as Record<string, unknown>)[timestampKey] as number | undefined;
+      const startTime = (config as Record<string, any>)[timestampKey] as number | undefined;
       const duration = startTime ? `${Date.now() - startTime}ms` : 'N/A';
 
       log('info', `[Response] ${method} ${url} - ${status} (${duration})`);
@@ -105,14 +105,14 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
     return response;
   };
 
-  const errorInterceptor: HttpErrorInterceptor = (err: unknown) => {
-    const error = err as HttpError;
+  const errorInterceptor: GvrayErrorInterceptor = (err: any) => {
+    const error = err as GvrayError;
     if (logError) {
       const config = error.config;
       const method = String(config?.method || 'GET').toUpperCase();
       const url = String(config?.url || '');
       const status = error.response?.status || 'N/A';
-      const startTime = (config as Record<string, unknown> | undefined)?.[timestampKey] as
+      const startTime = (config as Record<string, any> | undefined)?.[timestampKey] as
         | number
         | undefined;
       const duration = startTime ? `${Date.now() - startTime}ms` : 'N/A';
@@ -134,8 +134,8 @@ export function createLoggingInterceptor(options: LoggingOptions = {}): {
  * 简单日志拦截器（仅记录基本信息）
  */
 export function logging(): {
-  request: HttpRequestInterceptor;
-  response: [HttpResponseInterceptor, HttpErrorInterceptor];
+  request: GvrayRequestInterceptor;
+  response: [GvrayResponseInterceptor, GvrayErrorInterceptor];
 } {
   return createLoggingInterceptor();
 }

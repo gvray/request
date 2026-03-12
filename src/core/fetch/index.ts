@@ -1,7 +1,7 @@
 /**
  * @gvray/request fetch engine
  * A fetch-based HTTP client that mirrors the axios API surface.
- * Uses native fetch instead of XMLHttpRequest.
+ * Uses native fetch instead of XMLGvrayRequest.
  */
 
 export { Fetch } from './Fetch';

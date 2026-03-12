@@ -5,7 +5,7 @@
 
 export interface InterceptorHandler<T> {
   fulfilled?: ((value: T) => T | Promise<T>) | null;
-  rejected?: ((error: unknown) => unknown) | null;
+  rejected?: ((error: any) => unknown) | null;
 }
 
 export class InterceptorManager<T> {
@@ -13,7 +13,7 @@ export class InterceptorManager<T> {
 
   use(
     fulfilled?: ((value: T) => T | Promise<T>) | null,
-    rejected?: ((error: unknown) => unknown) | null
+    rejected?: ((error: any) => unknown) | null
   ): number {
     this.handlers.push({ fulfilled: fulfilled ?? null, rejected: rejected ?? null });
     return this.handlers.length - 1;

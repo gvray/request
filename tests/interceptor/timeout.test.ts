@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { timeout, defaultTimeout } from '../../src/interceptor/timeout';
-import type { HttpRequestOptions } from '../../src/types';
+import type { GvrayRequestConfig } from '../../src/types';
 
 describe('timeout', () => {
   it('should set timeout from number', async () => {
     const interceptor = timeout(5000);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };
@@ -19,7 +19,7 @@ describe('timeout', () => {
   it('should set timeout from options object', async () => {
     const interceptor = timeout({ timeout: 10000 });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };
@@ -35,7 +35,7 @@ describe('timeout', () => {
       message: 'Request timed out',
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };
@@ -49,7 +49,7 @@ describe('timeout', () => {
   it('should NOT override existing timeout', async () => {
     const interceptor = timeout(5000);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
       timeout: 10000,
@@ -63,7 +63,7 @@ describe('timeout', () => {
   it('should preserve other config options', async () => {
     const interceptor = timeout(5000);
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'POST',
       headers: {
@@ -86,7 +86,7 @@ describe('defaultTimeout', () => {
   it('should set timeout to 60 seconds', async () => {
     const interceptor = defaultTimeout();
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
     };
@@ -99,7 +99,7 @@ describe('defaultTimeout', () => {
   it('should NOT override existing timeout', async () => {
     const interceptor = defaultTimeout();
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       headers: {},
       timeout: 30000,

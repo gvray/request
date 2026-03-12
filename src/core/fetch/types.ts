@@ -7,7 +7,7 @@
  */
 
 import type { InterceptorManager } from './InterceptorManager';
-import type { HttpHeaders } from '../../types';
+import type { GvrayRequestHeaders } from '../../types';
 
 // ─── Params ──────────────────────────────────────────────────────────────────
 
@@ -16,9 +16,9 @@ export type Params = Record<string, ParamValue | ParamValue[]>;
 
 // ─── Transform ───────────────────────────────────────────────────────────────
 
-export type FetchRequestTransformer = (data: unknown, headers?: Record<string, string>) => unknown;
+export type FetchRequestTransformer = (data: any, headers?: Record<string, string>) => unknown;
 export type FetchResponseTransformer = (
-  data: unknown,
+  data: any,
   headers?: Record<string, string>,
   status?: number
 ) => unknown;
@@ -45,7 +45,7 @@ export interface FetchRequestConfig<D = unknown> {
   url?: string;
   method?: FetchMethod | (string & NonNullable<unknown>);
   baseURL?: string;
-  headers?: HttpHeaders;
+  headers?: GvrayRequestHeaders;
   params?: Params;
   data?: D;
   timeout?: number;

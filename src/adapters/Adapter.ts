@@ -1,6 +1,6 @@
-import type { HttpAdapter, HttpInstance, HttpOptions } from '../types';
+import type { GvrayAdapter, GvrayInstance, GvrayOptions } from '../types';
 
-export abstract class Adapter implements HttpAdapter {
-  abstract create(options: HttpOptions): HttpInstance;
-  abstract request<T = unknown>(options: HttpOptions): Promise<T>;
+export abstract class Adapter implements GvrayAdapter {
+  abstract create(options: GvrayOptions): GvrayInstance;
+  abstract request<T = any>(options: GvrayOptions): Promise<T>;
 }

@@ -1,11 +1,11 @@
 import type {
-  HttpRequestInterceptor,
-  HttpResponseInterceptor,
-  HttpErrorInterceptor,
+  GvrayRequestInterceptor,
+  GvrayResponseInterceptor,
+  GvrayErrorInterceptor,
 } from '../types';
 
 export type CacheEntry = {
-  data: unknown;
+  data: any;
   timestamp: number;
   expiresAt: number;
 };
@@ -16,7 +16,7 @@ export type CacheOptions = {
   // 缓存存储（默认内存）
   storage?: CacheStorage;
   // 生成缓存 key 的函数
-  keyGenerator?: (url: string, config: Record<string, unknown>) => string;
+  keyGenerator?: (url: string, config: Record<string, any>) => string;
   // 只缓存 GET 请求（默认 true）
   onlyGet?: boolean;
   // 排除的 URL 模式
@@ -55,7 +55,7 @@ class MemoryCacheStorage implements CacheStorage {
   }
 }
 
-function defaultKeyGenerator(url: string, config: Record<string, unknown>): string {
+function defaultKeyGenerator(url: string, config: Record<string, any>): string {
   const params = config.params ? JSON.stringify(config.params) : '';
   return `${String(config.method || 'GET')}:${url}:${params}`;
 }
@@ -70,8 +70,8 @@ function shouldExclude(url: string, exclude?: Array<string | RegExp>): boolean {
  * 缓存 GET 请求的响应，减少重复请求
  */
 export function createCacheInterceptor(options: CacheOptions = {}): {
-  request: HttpRequestInterceptor;
-  response: [HttpResponseInterceptor, HttpErrorInterceptor];
+  request: GvrayRequestInterceptor;
+  response: [GvrayResponseInterceptor, GvrayErrorInterceptor];
   storage: CacheStorage;
   clear: () => void | Promise<void>;
 } {
@@ -85,10 +85,10 @@ export function createCacheInterceptor(options: CacheOptions = {}): {
     onCacheMiss,
   } = options;
 
-  const requestInterceptor: HttpRequestInterceptor = async (config) => {
+  const requestInterceptor: GvrayRequestInterceptor = async (config) => {
     const method = String(config.method || 'GET').toUpperCase();
     const url = String(config.url || '');
-    const ext = config as Record<string, unknown>;
+    const ext = config as Record<string, any>;
 
     // 只缓存 GET 请求
     if (onlyGet && method !== 'GET') {
@@ -125,8 +125,8 @@ export function createCacheInterceptor(options: CacheOptions = {}): {
     return config;
   };
 
-  const responseInterceptor: HttpResponseInterceptor = async (response) => {
-    const config = response.config as Record<string, unknown>;
+  const responseInterceptor: GvrayResponseInterceptor = async (response) => {
+    const config = response.config as Record<string, any>;
 
     // 如果是从缓存返回，直接返回缓存数据
     if (config._fromCache) {
@@ -151,7 +151,7 @@ export function createCacheInterceptor(options: CacheOptions = {}): {
     return response;
   };
 
-  const errorInterceptor: HttpErrorInterceptor = (error) => {
+  const errorInterceptor: GvrayErrorInterceptor = (error) => {
     return Promise.reject(error);
   };
 

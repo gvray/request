@@ -10,7 +10,7 @@ export type ValidateStatus = (status: number) => boolean;
 
 const defaultValidateStatus: ValidateStatus = (status) => status >= 200 && status < 300;
 
-export function settle<T = unknown>(
+export function settle<T = any>(
   response: FetchResponse<T>,
   config: FetchRequestConfig
 ): FetchResponse<T> {

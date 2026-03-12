@@ -6,7 +6,7 @@
 import { FetchError } from './FetchError';
 import type { FetchRequestConfig } from './types';
 
-export class CanceledError<T = unknown> extends FetchError<T> {
+export class CanceledError<T = any> extends FetchError<T> {
   constructor(message?: string, config?: FetchRequestConfig) {
     super(message || 'canceled', FetchError.ERR_CANCELED, config);
     this.name = 'CanceledError';

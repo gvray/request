@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createRetryInterceptor, retry } from '../../src/interceptor/retry';
 import type { AxiosError } from 'axios';
-import type { HttpInstance } from '../../src/types';
+import type { GvrayInstance } from '../../src/types';
 
-function createMockInstance(overrides: Partial<HttpInstance> = {}): HttpInstance {
+function createMockInstance(overrides: Partial<GvrayInstance> = {}): GvrayInstance {
   return {
     request: vi
       .fn()
       .mockResolvedValue({ data: {}, status: 200, statusText: 'OK', headers: {}, config: {} }),
     ...overrides,
-  } as unknown as HttpInstance;
+  } as unknown as GvrayInstance;
 }
 
 describe('createRetryInterceptor', () => {

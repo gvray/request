@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createLoggingInterceptor, logging } from '../../src/interceptor/logging';
-import type { HttpRequestOptions, HttpResponse, HttpError } from '../../src/types';
+import type { GvrayRequestConfig, GvrayResponse, GvrayError } from '../../src/types';
 
 describe('createLoggingInterceptor', () => {
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('createLoggingInterceptor', () => {
 
     const { request } = createLoggingInterceptor({ logger: mockLogger });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -52,7 +52,7 @@ describe('createLoggingInterceptor', () => {
       level: 'debug',
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'POST',
       headers: {},
@@ -77,7 +77,7 @@ describe('createLoggingInterceptor', () => {
       logRequestBody: false,
     });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'POST',
       headers: {},
@@ -100,7 +100,7 @@ describe('createLoggingInterceptor', () => {
     const { request, response } = createLoggingInterceptor({ logger: mockLogger });
     const [responseInterceptor] = response;
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -112,7 +112,7 @@ describe('createLoggingInterceptor', () => {
       data: { users: [] },
       status: 200,
       config,
-    } as HttpResponse;
+    } as GvrayResponse;
 
     await responseInterceptor(mockResponse);
 
@@ -135,7 +135,7 @@ describe('createLoggingInterceptor', () => {
     });
     const [responseInterceptor] = response;
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -147,7 +147,7 @@ describe('createLoggingInterceptor', () => {
       data: { users: ['user1', 'user2'] },
       status: 200,
       config,
-    } as HttpResponse;
+    } as GvrayResponse;
 
     await responseInterceptor(mockResponse);
 
@@ -174,7 +174,7 @@ describe('createLoggingInterceptor', () => {
       response: {
         status: 500,
       },
-    } as unknown as HttpError;
+    } as unknown as GvrayError;
 
     await expect(errorInterceptor(mockError)).rejects.toBe(mockError);
 
@@ -192,7 +192,7 @@ describe('createLoggingInterceptor', () => {
 
     const { request } = createLoggingInterceptor({ logger: mockLogger, level: 'none' });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -214,7 +214,7 @@ describe('createLoggingInterceptor', () => {
 
     const { request } = createLoggingInterceptor({ logger: mockLogger, logRequest: false });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -236,7 +236,7 @@ describe('createLoggingInterceptor', () => {
     const { response } = createLoggingInterceptor({ logger: mockLogger, logResponse: false });
     const [responseInterceptor] = response;
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -246,7 +246,7 @@ describe('createLoggingInterceptor', () => {
       data: { users: [] },
       status: 200,
       config,
-    } as HttpResponse;
+    } as GvrayResponse;
 
     await responseInterceptor(mockResponse);
 
@@ -270,7 +270,7 @@ describe('createLoggingInterceptor', () => {
         url: '/api/users',
         method: 'GET',
       },
-    } as unknown as HttpError;
+    } as unknown as GvrayError;
 
     await expect(errorInterceptor(mockError)).rejects.toBe(mockError);
 
@@ -280,7 +280,7 @@ describe('createLoggingInterceptor', () => {
   it('should record request start time', async () => {
     const { request } = createLoggingInterceptor();
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},
@@ -295,7 +295,7 @@ describe('createLoggingInterceptor', () => {
   it('should use custom timestamp key', async () => {
     const { request } = createLoggingInterceptor({ timestampKey: '_customTime' });
 
-    const config: HttpRequestOptions = {
+    const config: GvrayRequestConfig = {
       url: '/api/users',
       method: 'GET',
       headers: {},

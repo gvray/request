@@ -1,15 +1,15 @@
-import type { HttpRequestInterceptor, HttpHeaders } from '../types';
+import type { GvrayRequestInterceptor, GvrayRequestHeaders } from '../types';
 import type { StringProvider } from './auth';
 
 /**
  * 为非 GET/HEAD 请求自动注入 Content-Type: application/json（若未显式设置）
  */
-export function jsonContentType(): HttpRequestInterceptor {
+export function jsonContentType(): GvrayRequestInterceptor {
   return (config) => {
     const method = String(config.method || 'GET').toUpperCase();
     const needBody = method !== 'GET' && method !== 'HEAD';
 
-    const headers: HttpHeaders = { ...(config.headers || {}) };
+    const headers: GvrayRequestHeaders = { ...(config.headers || {}) };
 
     if (needBody && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
@@ -25,11 +25,11 @@ export function jsonContentType(): HttpRequestInterceptor {
 export function acceptLanguage(
   getLocale: StringProvider,
   header = 'Accept-Language'
-): HttpRequestInterceptor {
+): GvrayRequestInterceptor {
   return async (config) => {
     const locale = await getLocale();
     if (locale) {
-      const headers: HttpHeaders = { ...(config.headers || {}) };
+      const headers: GvrayRequestHeaders = { ...(config.headers || {}) };
       headers[header] = String(locale);
       return { ...config, headers };
     }

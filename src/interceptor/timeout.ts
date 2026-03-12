@@ -1,4 +1,4 @@
-import type { HttpRequestInterceptor } from '../types';
+import type { GvrayRequestInterceptor } from '../types';
 
 export type TimeoutOptions = {
   // 超时时间（毫秒）
@@ -11,7 +11,7 @@ export type TimeoutOptions = {
  * 为请求设置超时时间
  * 如果请求配置中已有 timeout，则保留原值
  */
-export function timeout(options: TimeoutOptions | number): HttpRequestInterceptor {
+export function timeout(options: TimeoutOptions | number): GvrayRequestInterceptor {
   const config = typeof options === 'number' ? { timeout: options } : options;
 
   return (requestConfig) => {
@@ -31,6 +31,6 @@ export function timeout(options: TimeoutOptions | number): HttpRequestIntercepto
 /**
  * 设置默认超时（60秒）
  */
-export function defaultTimeout(): HttpRequestInterceptor {
+export function defaultTimeout(): GvrayRequestInterceptor {
   return timeout({ timeout: 60000, message: '请求超时' });
 }

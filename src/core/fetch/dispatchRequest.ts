@@ -31,7 +31,7 @@ function headersToRecord(headers: Headers): Record<string, string> {
 // ─── Transform helpers ───────────────────────────────────────────────────────
 
 function applyTransformRequest(
-  data: unknown,
+  data: any,
   headers: Record<string, string>,
   fns?: FetchRequestTransformer | FetchRequestTransformer[]
 ): unknown {
@@ -45,7 +45,7 @@ function applyTransformRequest(
 }
 
 function applyTransformResponse(
-  data: unknown,
+  data: any,
   headers: Record<string, string>,
   status: number,
   fns?: FetchResponseTransformer | FetchResponseTransformer[]
@@ -66,7 +66,7 @@ function toRequestInit(config: FetchRequestConfig): RequestInit {
   const headers: Record<string, string> = { ...(config.headers || {}) } as Record<string, string>;
 
   let body: BodyInit | null = null;
-  let data: unknown = config.data;
+  let data: any = config.data;
 
   // Apply request transformers
   data = applyTransformRequest(data, headers, config.transformRequest);
@@ -133,7 +133,7 @@ async function parseResponseBody<T>(
 
 // ─── Main dispatch ───────────────────────────────────────────────────────────
 
-export async function dispatchRequest<T = unknown>(
+export async function dispatchRequest<T = any>(
   config: FetchRequestConfig,
   defaults: FetchRequestConfig
 ): Promise<FetchResponse<T>> {

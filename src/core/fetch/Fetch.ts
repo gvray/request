@@ -9,7 +9,7 @@ import { dispatchRequest } from './dispatchRequest';
 import { buildFullPath } from './buildFullPath';
 import { buildURL } from './buildURL';
 import type { FetchRequestConfig, FetchResponse } from './types';
-import type { HttpOptions } from '../../types';
+import type { GvrayOptions } from '../../types';
 
 export class Fetch {
   defaults: FetchRequestConfig;
@@ -18,7 +18,7 @@ export class Fetch {
     response: InterceptorManager<FetchResponse>;
   };
 
-  constructor(config: HttpOptions = {}) {
+  constructor(config: GvrayOptions = {}) {
     this.defaults = config as FetchRequestConfig;
     this.interceptors = {
       request: new InterceptorManager<FetchRequestConfig>(),

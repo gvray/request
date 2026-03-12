@@ -1,7 +1,7 @@
 export * from './types';
 export { RequestClient, createClient, createRequest } from './client';
 export { request, getClient, requestSafe } from './request';
-export type { HttpResult } from './types';
+export type { GvrayResult } from './types';
 export { errorConfig } from './requestErrorConfig';
 export * as interceptors from './interceptor';
 

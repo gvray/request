@@ -1,9 +1,9 @@
 import type {
-  HttpErrorInterceptor,
-  HttpResponseInterceptor,
-  HttpError,
-  HttpOptions,
-  HttpInstance,
+  GvrayErrorInterceptor,
+  GvrayResponseInterceptor,
+  GvrayError,
+  GvrayOptions,
+  GvrayInstance,
 } from '../types';
 
 export type RetryOptions = {
@@ -16,22 +16,22 @@ export type RetryOptions = {
   // 需要重试的状态码（默认 [408, 429, 500, 502, 503, 504]）
   retryableStatuses?: number[];
   // 需要重试的错误类型（默认网络错误和超时）
-  retryCondition?: (error: HttpError) => boolean;
+  retryCondition?: (error: GvrayError) => boolean;
   // 重试回调（可用于日志记录）
-  onRetry?: (retryCount: number, error: HttpError, config: HttpOptions) => void;
+  onRetry?: (retryCount: number, error: GvrayError, config: GvrayOptions) => void;
 };
 
 const DEFAULT_RETRYABLE_STATUSES = [408, 429, 500, 502, 503, 504];
 
-function isNetworkError(error: HttpError): boolean {
+function isNetworkError(error: GvrayError): boolean {
   return !error.response && Boolean(error.code) && error.code !== 'ECONNABORTED';
 }
 
-function isTimeoutError(error: HttpError): boolean {
+function isTimeoutError(error: GvrayError): boolean {
   return error.code === 'ECONNABORTED' || error.message?.includes('timeout');
 }
 
-function defaultRetryCondition(error: HttpError, retryableStatuses: number[]): boolean {
+function defaultRetryCondition(error: GvrayError, retryableStatuses: number[]): boolean {
   if (isNetworkError(error) || isTimeoutError(error)) {
     return true;
   }
@@ -54,33 +54,33 @@ function sleep(ms: number): Promise<void> {
 // 重载 1：只传 options，返回一个接受 instance 的函数（用于手动配置）
 export function createRetryInterceptor(
   options?: RetryOptions
-): (instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor];
+): (instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 重载 2：传 options 和 instance，直接返回拦截器（用于 Preset）
 export function createRetryInterceptor(
   options: RetryOptions | undefined,
-  instance: HttpInstance
-): [HttpResponseInterceptor, HttpErrorInterceptor];
+  instance: GvrayInstance
+): [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 实现
 export function createRetryInterceptor(
   options?: RetryOptions,
-  instance?: HttpInstance
+  instance?: GvrayInstance
 ):
-  | [HttpResponseInterceptor, HttpErrorInterceptor]
-  | ((instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor]) {
+  | [GvrayResponseInterceptor, GvrayErrorInterceptor]
+  | ((instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor]) {
   if (instance) {
     // 重载 2：createRetryInterceptor(options, instance)
     return createRetryInterceptorImpl(options || {}, instance);
   } else {
     // 重载 1：createRetryInterceptor(options)
-    return (instance: HttpInstance) => createRetryInterceptorImpl(options || {}, instance);
+    return (instance: GvrayInstance) => createRetryInterceptorImpl(options || {}, instance);
   }
 }
 
 // 实际的拦截器实现
 function createRetryInterceptorImpl(
   options: RetryOptions = {},
-  instance: HttpInstance
-): [HttpResponseInterceptor, HttpErrorInterceptor] {
+  instance: GvrayInstance
+): [GvrayResponseInterceptor, GvrayErrorInterceptor] {
   const {
     maxRetries = 3,
     retryDelay = 1000,
@@ -90,11 +90,11 @@ function createRetryInterceptorImpl(
     onRetry,
   } = options;
 
-  const onResponse: HttpResponseInterceptor = (response) => response;
+  const onResponse: GvrayResponseInterceptor = (response) => response;
 
-  const onError: HttpErrorInterceptor = async (err: unknown) => {
-    const error = err as HttpError;
-    const config = (error.config || {}) as HttpOptions & { _retryCount?: number };
+  const onError: GvrayErrorInterceptor = async (err: any) => {
+    const error = err as GvrayError;
+    const config = (error.config || {}) as GvrayOptions & { _retryCount?: number };
 
     if (!error.config) {
       return Promise.reject(error);
@@ -137,6 +137,6 @@ function createRetryInterceptorImpl(
  */
 export function retry(
   maxRetries = 3
-): (instance: HttpInstance) => [HttpResponseInterceptor, HttpErrorInterceptor] {
+): (instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor] {
   return createRetryInterceptor({ maxRetries });
 }
