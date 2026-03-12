@@ -1,4 +1,4 @@
-import RequestClient from './core/RequestClient';
+import RequestClient from './core/GvrayRequest';
 import type {
   GvrayConfig,
   GvrayRequestConfig,
