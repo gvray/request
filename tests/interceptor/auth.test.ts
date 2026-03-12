@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { bearerAuth, createAuthRefreshInterceptor } from '../../src/interceptor/auth';
+import { requestBearerAuth, createResponseAuthRefresh } from '../../src/interceptor/auth';
 import type { GvrayRequestConfig, GvrayInstance } from '../../src/types';
 
 function createMockInstance(overrides: Partial<GvrayInstance> = {}): GvrayInstance {
@@ -18,7 +18,7 @@ describe('bearerAuth', () => {
 
   it('should add Authorization header with token', async () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
-    const interceptor = bearerAuth(getToken);
+    const interceptor = requestBearerAuth(getToken);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -34,7 +34,7 @@ describe('bearerAuth', () => {
 
   it('should use custom header name and scheme', async () => {
     const getToken = vi.fn().mockResolvedValue('my-token');
-    const interceptor = bearerAuth(getToken, 'X-Auth-Token', 'Token');
+    const interceptor = requestBearerAuth(getToken, 'X-Auth-Token', 'Token');
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -48,7 +48,7 @@ describe('bearerAuth', () => {
 
   it('should skip auth when skipAuth is true', async () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
-    const interceptor = bearerAuth(getToken);
+    const interceptor = requestBearerAuth(getToken);
 
     const config: GvrayRequestConfig = {
       url: '/api/login',
@@ -64,7 +64,10 @@ describe('bearerAuth', () => {
 
   it('should skip auth for excluded URL patterns (string)', async () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
-    const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', ['/public', '/auth']);
+    const interceptor = requestBearerAuth(getToken, 'Authorization', 'Bearer', [
+      '/public',
+      '/auth',
+    ]);
 
     const config: GvrayRequestConfig = {
       url: '/public/data',
@@ -78,7 +81,9 @@ describe('bearerAuth', () => {
 
   it('should skip auth for excluded URL patterns (regex)', async () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
-    const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', [/^\/api\/public\/.*/]);
+    const interceptor = requestBearerAuth(getToken, 'Authorization', 'Bearer', [
+      /^\/api\/public\/.*/,
+    ]);
 
     const config: GvrayRequestConfig = {
       url: '/api/public/resource',
@@ -93,7 +98,7 @@ describe('bearerAuth', () => {
   it('should skip auth for excluded URL patterns (function)', async () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
     const excludeFn = vi.fn((url?: string) => url?.includes('/no-auth') ?? false);
-    const interceptor = bearerAuth(getToken, 'Authorization', 'Bearer', excludeFn);
+    const interceptor = requestBearerAuth(getToken, 'Authorization', 'Bearer', excludeFn);
 
     const config: GvrayRequestConfig = {
       url: '/api/no-auth/endpoint',
@@ -108,7 +113,7 @@ describe('bearerAuth', () => {
 
   it('should not add header when token is null', async () => {
     const getToken = vi.fn().mockResolvedValue(null);
-    const interceptor = bearerAuth(getToken);
+    const interceptor = requestBearerAuth(getToken);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -122,7 +127,7 @@ describe('bearerAuth', () => {
 
   it('should not add header when token is undefined', async () => {
     const getToken = vi.fn().mockResolvedValue(undefined);
-    const interceptor = bearerAuth(getToken);
+    const interceptor = requestBearerAuth(getToken);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -136,7 +141,7 @@ describe('bearerAuth', () => {
 
   it('should preserve existing headers', async () => {
     const getToken = vi.fn().mockResolvedValue('test-token');
-    const interceptor = bearerAuth(getToken);
+    const interceptor = requestBearerAuth(getToken);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -155,7 +160,7 @@ describe('bearerAuth', () => {
 
   it('should handle synchronous token provider', async () => {
     const getToken = vi.fn().mockReturnValue('sync-token');
-    const interceptor = bearerAuth(getToken);
+    const interceptor = requestBearerAuth(getToken);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -168,9 +173,9 @@ describe('bearerAuth', () => {
   });
 });
 
-describe('createAuthRefreshInterceptor', () => {
+describe('createResponseAuthRefresh', () => {
   it('should return response interceptor tuple', () => {
-    const [onResponse, onError] = createAuthRefreshInterceptor(
+    const [onResponse, onError] = createResponseAuthRefresh(
       {
         refreshToken: vi.fn().mockResolvedValue('new-token'),
       },
@@ -182,7 +187,7 @@ describe('createAuthRefreshInterceptor', () => {
   });
 
   it('should pass through successful responses', async () => {
-    const [onResponse] = createAuthRefreshInterceptor(
+    const [onResponse] = createResponseAuthRefresh(
       {
         refreshToken: vi.fn().mockResolvedValue('new-token'),
       },
@@ -196,7 +201,7 @@ describe('createAuthRefreshInterceptor', () => {
   });
 
   it('should reject non-auth errors', async () => {
-    const [, onError] = createAuthRefreshInterceptor(
+    const [, onError] = createResponseAuthRefresh(
       {
         refreshToken: vi.fn().mockResolvedValue('new-token'),
       },
@@ -213,7 +218,7 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should call loginRedirect when refresh fails', async () => {
     const loginRedirect = vi.fn();
-    const [, onError] = createAuthRefreshInterceptor(
+    const [, onError] = createResponseAuthRefresh(
       {
         refreshToken: vi.fn().mockRejectedValue(new Error('Refresh failed')),
         loginRedirect,
@@ -235,7 +240,7 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should call loginRedirect on retry failure', async () => {
     const loginRedirect = vi.fn();
-    const [, onError] = createAuthRefreshInterceptor(
+    const [, onError] = createResponseAuthRefresh(
       {
         refreshToken: vi.fn().mockResolvedValue('new-token'),
         loginRedirect,
@@ -257,7 +262,7 @@ describe('createAuthRefreshInterceptor', () => {
 
   it('should handle custom status codes', async () => {
     const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
-    const [, onError] = createAuthRefreshInterceptor(
+    const [, onError] = createResponseAuthRefresh(
       {
         refreshToken,
         statuses: [419],
@@ -278,7 +283,7 @@ describe('createAuthRefreshInterceptor', () => {
     const setToken = vi.fn();
     const refreshToken = vi.fn().mockResolvedValue('new-token');
 
-    createAuthRefreshInterceptor(
+    createResponseAuthRefresh(
       {
         refreshToken,
         setToken,
@@ -301,7 +306,7 @@ describe('createAuthRefreshInterceptor', () => {
       const loginRedirect = vi.fn();
 
       const mockInstance = createMockInstance();
-      const [, onError] = createAuthRefreshInterceptor(
+      const [, onError] = createResponseAuthRefresh(
         {
           refreshToken,
           loginRedirect,
@@ -336,7 +341,7 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor(
+      const [, onError] = createResponseAuthRefresh(
         {
           refreshToken,
           loginRedirect,
@@ -369,7 +374,7 @@ describe('createAuthRefreshInterceptor', () => {
       const loginRedirect = vi.fn();
       const refreshToken = vi.fn().mockResolvedValue(null); // Returns null = no token
 
-      const [, onError] = createAuthRefreshInterceptor(
+      const [, onError] = createResponseAuthRefresh(
         {
           refreshToken,
           loginRedirect,
@@ -392,7 +397,7 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor(
+      const [, onError] = createResponseAuthRefresh(
         {
           refreshToken,
           loginRedirect,
@@ -423,7 +428,7 @@ describe('createAuthRefreshInterceptor', () => {
       const refreshToken = vi.fn().mockResolvedValue('new-token');
       const loginRedirect = vi.fn();
 
-      const [, onError] = createAuthRefreshInterceptor(
+      const [, onError] = createResponseAuthRefresh(
         {
           refreshToken,
           loginRedirect,

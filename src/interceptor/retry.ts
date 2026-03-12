@@ -52,16 +52,16 @@ function sleep(ms: number): Promise<void> {
  * 2. 手动配置：createRetryInterceptor(options, instance)
  */
 // 重载 1：只传 options，返回一个接受 instance 的函数（用于手动配置）
-export function createRetryInterceptor(
+export function createResponseRetry(
   options?: RetryOptions
 ): (instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 重载 2：传 options 和 instance，直接返回拦截器（用于 Preset）
-export function createRetryInterceptor(
+export function createResponseRetry(
   options: RetryOptions | undefined,
   instance: GvrayInstance
 ): [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 实现
-export function createRetryInterceptor(
+export function createResponseRetry(
   options?: RetryOptions,
   instance?: GvrayInstance
 ):
@@ -135,8 +135,8 @@ function createRetryInterceptorImpl(
 /**
  * 简化的重试拦截器（使用默认配置）
  */
-export function retry(
+export function responseRetry(
   maxRetries = 3
 ): (instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor] {
-  return createRetryInterceptor({ maxRetries });
+  return createResponseRetry({ maxRetries });
 }

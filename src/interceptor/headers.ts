@@ -4,7 +4,7 @@ import type { StringProvider } from './auth';
 /**
  * 为非 GET/HEAD 请求自动注入 Content-Type: application/json（若未显式设置）
  */
-export function jsonContentType(): GvrayRequestInterceptor {
+export function requestJsonContentType(): GvrayRequestInterceptor {
   return (config) => {
     const method = String(config.method || 'GET').toUpperCase();
     const needBody = method !== 'GET' && method !== 'HEAD';
@@ -22,7 +22,7 @@ export function jsonContentType(): GvrayRequestInterceptor {
 /**
  * 注入多语言头部，如 Accept-Language: zh-CN
  */
-export function acceptLanguage(
+export function requestAcceptLanguage(
   getLocale: StringProvider,
   header = 'Accept-Language'
 ): GvrayRequestInterceptor {

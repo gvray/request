@@ -16,12 +16,12 @@ import type {
   GvrayOptions,
 } from '../types';
 import {
-  bearerAuth,
-  jsonContentType,
-  acceptLanguage,
-  withCredentials,
-  createAuthRefreshInterceptor,
-  createRetryInterceptor,
+  requestBearerAuth,
+  requestJsonContentType,
+  requestAcceptLanguage,
+  requestWithCredentials,
+  createResponseAuthRefresh,
+  createResponseRetry,
   createLoggingInterceptor,
 } from '../interceptor';
 
@@ -73,25 +73,25 @@ class RequestClient {
 
     if (preset?.bearerAuth) {
       const { getToken, header, scheme, exclude } = preset.bearerAuth;
-      builtinRequestInterceptors.push(bearerAuth(getToken, header, scheme, exclude));
+      builtinRequestInterceptors.push(requestBearerAuth(getToken, header, scheme, exclude));
     }
     if (preset?.jsonContentType) {
-      builtinRequestInterceptors.push(jsonContentType());
+      builtinRequestInterceptors.push(requestJsonContentType());
     }
     if (preset?.acceptLanguage) {
       const { getLocale, header } = preset.acceptLanguage;
-      builtinRequestInterceptors.push(acceptLanguage(getLocale, header));
+      builtinRequestInterceptors.push(requestAcceptLanguage(getLocale, header));
     }
     if (preset?.withCredentials) {
-      builtinRequestInterceptors.push(withCredentials());
+      builtinRequestInterceptors.push(requestWithCredentials());
     }
     if (preset?.authRefresh) {
       builtinResponseInterceptors.push(
-        createAuthRefreshInterceptor(preset.authRefresh, this.requestInstance!)
+        createResponseAuthRefresh(preset.authRefresh, this.requestInstance!)
       );
     }
     if (preset?.retry) {
-      builtinResponseInterceptors.push(createRetryInterceptor(preset.retry, this.requestInstance!));
+      builtinResponseInterceptors.push(createResponseRetry(preset.retry, this.requestInstance!));
     }
     if (preset?.logging) {
       const loggingOptions = typeof preset.logging === 'boolean' ? {} : preset.logging;

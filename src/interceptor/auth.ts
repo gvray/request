@@ -16,7 +16,7 @@ export type StringProvider = () => MaybePromise<string | null | undefined>;
 /**
  * 在请求头中注入 Authorization: Bearer <token>
  */
-export function bearerAuth(
+export function requestBearerAuth(
   getToken: StringProvider,
   header = 'Authorization',
   scheme = 'Bearer',
@@ -89,16 +89,16 @@ interface PendingRequest {
  * 2. 手动配置：createAuthRefreshInterceptor(options, instance)
  */
 // 重载 1：只传 options，返回一个接受 instance 的函数（用于手动配置）
-export function createAuthRefreshInterceptor(
+export function createResponseAuthRefresh(
   options: AuthRefreshOptions
 ): (instance: GvrayInstance) => [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 重载 2：传 options 和 instance，直接返回拦截器（用于 Preset）
-export function createAuthRefreshInterceptor(
+export function createResponseAuthRefresh(
   options: AuthRefreshOptions,
   instance: GvrayInstance
 ): [GvrayResponseInterceptor, GvrayErrorInterceptor];
 // 实现
-export function createAuthRefreshInterceptor(
+export function createResponseAuthRefresh(
   options: AuthRefreshOptions,
   instance?: GvrayInstance
 ):

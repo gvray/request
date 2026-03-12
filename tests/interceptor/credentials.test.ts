@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { withCredentials } from '../../src/interceptor/credentials';
+import { requestWithCredentials } from '../../src/interceptor/credentials';
 import type { GvrayRequestConfig } from '../../src/types';
 
 describe('withCredentials', () => {
   it('should set withCredentials to true', async () => {
-    const interceptor = withCredentials();
+    const interceptor = requestWithCredentials();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -17,7 +17,7 @@ describe('withCredentials', () => {
   });
 
   it('should preserve other config options', async () => {
-    const interceptor = withCredentials();
+    const interceptor = requestWithCredentials();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -38,7 +38,7 @@ describe('withCredentials', () => {
   });
 
   it('should override existing withCredentials value', async () => {
-    const interceptor = withCredentials();
+    const interceptor = requestWithCredentials();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',

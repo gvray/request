@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createRetryInterceptor, retry } from '../../src/interceptor/retry';
+import { createResponseRetry, responseRetry } from '../../src/interceptor/retry';
 import type { AxiosError } from 'axios';
 import type { GvrayInstance } from '../../src/types';
 
@@ -19,14 +19,14 @@ describe('createRetryInterceptor', () => {
   });
 
   it('should return response and error interceptor tuple', () => {
-    const [onResponse, onError] = createRetryInterceptor(undefined, createMockInstance());
+    const [onResponse, onError] = createResponseRetry(undefined, createMockInstance());
 
     expect(typeof onResponse).toBe('function');
     expect(typeof onError).toBe('function');
   });
 
   it('should pass through successful responses', async () => {
-    const [onResponse] = createRetryInterceptor(undefined, createMockInstance());
+    const [onResponse] = createResponseRetry(undefined, createMockInstance());
 
     const mockResponse = { data: { success: true }, status: 200 };
     const result = await onResponse(mockResponse as any);
@@ -35,7 +35,7 @@ describe('createRetryInterceptor', () => {
   });
 
   it('should reject non-retryable errors', async () => {
-    const [, onError] = createRetryInterceptor(undefined, createMockInstance());
+    const [, onError] = createResponseRetry(undefined, createMockInstance());
 
     const mockError = {
       response: { status: 400 },
@@ -46,7 +46,7 @@ describe('createRetryInterceptor', () => {
   });
 
   it('should reject errors without config', async () => {
-    const [, onError] = createRetryInterceptor(undefined, createMockInstance());
+    const [, onError] = createResponseRetry(undefined, createMockInstance());
 
     const mockError = {
       response: { status: 500 },
@@ -56,7 +56,7 @@ describe('createRetryInterceptor', () => {
   });
 
   it('should reject after max retries exceeded', async () => {
-    const [, onError] = createRetryInterceptor({ maxRetries: 2 }, createMockInstance());
+    const [, onError] = createResponseRetry({ maxRetries: 2 }, createMockInstance());
 
     const mockError = {
       response: { status: 500 },
@@ -69,7 +69,7 @@ describe('createRetryInterceptor', () => {
   it('should call onRetry callback', async () => {
     const onRetryCallback = vi.fn();
     const mockInstance = createMockInstance();
-    const [, onError] = createRetryInterceptor(
+    const [, onError] = createResponseRetry(
       {
         maxRetries: 3,
         onRetry: onRetryCallback,
@@ -93,7 +93,7 @@ describe('createRetryInterceptor', () => {
   });
 
   it('should use custom retryable statuses', async () => {
-    const [, onError] = createRetryInterceptor(
+    const [, onError] = createResponseRetry(
       {
         retryableStatuses: [418],
       },
@@ -111,7 +111,7 @@ describe('createRetryInterceptor', () => {
 
   it('should use custom retry condition', async () => {
     const retryCondition = vi.fn().mockReturnValue(false);
-    const [, onError] = createRetryInterceptor(
+    const [, onError] = createResponseRetry(
       {
         retryCondition,
       },
@@ -129,7 +129,7 @@ describe('createRetryInterceptor', () => {
 
   it('should retry on network errors', async () => {
     const onRetryCallback = vi.fn();
-    const [, onError] = createRetryInterceptor(
+    const [, onError] = createResponseRetry(
       {
         onRetry: onRetryCallback,
       },
@@ -149,7 +149,7 @@ describe('createRetryInterceptor', () => {
 
   it('should retry on timeout errors', async () => {
     const onRetryCallback = vi.fn();
-    const [, onError] = createRetryInterceptor(
+    const [, onError] = createResponseRetry(
       {
         onRetry: onRetryCallback,
       },
@@ -171,14 +171,14 @@ describe('createRetryInterceptor', () => {
 
 describe('retry helper', () => {
   it('should create retry interceptor with default max retries', () => {
-    const [onResponse, onError] = retry()(createMockInstance());
+    const [onResponse, onError] = responseRetry()(createMockInstance());
 
     expect(typeof onResponse).toBe('function');
     expect(typeof onError).toBe('function');
   });
 
   it('should create retry interceptor with custom max retries', () => {
-    const [onResponse, onError] = retry(5)(createMockInstance());
+    const [onResponse, onError] = responseRetry(5)(createMockInstance());
 
     expect(typeof onResponse).toBe('function');
     expect(typeof onError).toBe('function');

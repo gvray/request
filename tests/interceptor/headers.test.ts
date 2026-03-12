@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { jsonContentType, acceptLanguage } from '../../src/interceptor/headers';
+import { requestJsonContentType, requestAcceptLanguage } from '../../src/interceptor/headers';
 import type { GvrayRequestConfig } from '../../src/types';
 
 describe('jsonContentType', () => {
   it('should add Content-Type header for POST request', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -18,7 +18,7 @@ describe('jsonContentType', () => {
   });
 
   it('should add Content-Type header for PUT request', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -32,7 +32,7 @@ describe('jsonContentType', () => {
   });
 
   it('should add Content-Type header for PATCH request', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -46,7 +46,7 @@ describe('jsonContentType', () => {
   });
 
   it('should add Content-Type header for DELETE request', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -60,7 +60,7 @@ describe('jsonContentType', () => {
   });
 
   it('should NOT add Content-Type header for GET request', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -74,7 +74,7 @@ describe('jsonContentType', () => {
   });
 
   it('should NOT add Content-Type header for HEAD request', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -88,7 +88,7 @@ describe('jsonContentType', () => {
   });
 
   it('should NOT override existing Content-Type header', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -104,7 +104,7 @@ describe('jsonContentType', () => {
   });
 
   it('should handle lowercase method', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -118,7 +118,7 @@ describe('jsonContentType', () => {
   });
 
   it('should default to GET when method is not specified', async () => {
-    const interceptor = jsonContentType();
+    const interceptor = requestJsonContentType();
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -134,7 +134,7 @@ describe('jsonContentType', () => {
 describe('acceptLanguage', () => {
   it('should add Accept-Language header', async () => {
     const getLocale = vi.fn().mockResolvedValue('zh-CN');
-    const interceptor = acceptLanguage(getLocale);
+    const interceptor = requestAcceptLanguage(getLocale);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -149,7 +149,7 @@ describe('acceptLanguage', () => {
 
   it('should use custom header name', async () => {
     const getLocale = vi.fn().mockResolvedValue('en-US');
-    const interceptor = acceptLanguage(getLocale, 'X-Locale');
+    const interceptor = requestAcceptLanguage(getLocale, 'X-Locale');
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -163,7 +163,7 @@ describe('acceptLanguage', () => {
 
   it('should not add header when locale is null', async () => {
     const getLocale = vi.fn().mockResolvedValue(null);
-    const interceptor = acceptLanguage(getLocale);
+    const interceptor = requestAcceptLanguage(getLocale);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -177,7 +177,7 @@ describe('acceptLanguage', () => {
 
   it('should not add header when locale is undefined', async () => {
     const getLocale = vi.fn().mockResolvedValue(undefined);
-    const interceptor = acceptLanguage(getLocale);
+    const interceptor = requestAcceptLanguage(getLocale);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -191,7 +191,7 @@ describe('acceptLanguage', () => {
 
   it('should preserve existing headers', async () => {
     const getLocale = vi.fn().mockResolvedValue('fr-FR');
-    const interceptor = acceptLanguage(getLocale);
+    const interceptor = requestAcceptLanguage(getLocale);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
@@ -208,7 +208,7 @@ describe('acceptLanguage', () => {
 
   it('should handle synchronous locale provider', async () => {
     const getLocale = vi.fn().mockReturnValue('de-DE');
-    const interceptor = acceptLanguage(getLocale);
+    const interceptor = requestAcceptLanguage(getLocale);
 
     const config: GvrayRequestConfig = {
       url: '/api/users',
