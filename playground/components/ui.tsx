@@ -3,43 +3,76 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useCallback } from 'react'
 
-const navItems = [
-  { href: '/', label: 'Overview', icon: '◈' },
-  { href: '/basic', label: 'Basic', icon: '○' },
-  { href: '/auth', label: 'Auth', icon: '◎' },
-  { href: '/auth-refresh', label: 'Auth Refresh', icon: '⟳' },
-  { href: '/retry', label: 'Retry', icon: '↻' },
-  { href: '/timeout', label: 'Timeout', icon: '◷' },
-  { href: '/cache', label: 'Cache', icon: '◉' },
-  { href: '/logging', label: 'Logging', icon: '▤' },
-  { href: '/fetch', label: 'Fetch Engine', icon: '⇄' },
+const engineTabs = [
+  { key: 'axios', label: 'Axios Engine', icon: '🔷' },
+  { key: 'fetch', label: 'Fetch Engine', icon: '⚡' },
+]
+
+const featureTabs = [
+  { path: 'overview', label: 'Overview', icon: '◈' },
+  { path: 'basic', label: 'Basic', icon: '○' },
+  { path: 'auth', label: 'Auth', icon: '◎' },
+  { path: 'auth-refresh', label: 'Auth Refresh', icon: '⟳' },
+  { path: 'retry', label: 'Retry', icon: '↻' },
+  { path: 'timeout', label: 'Timeout', icon: '◷' },
+  { path: 'cache', label: 'Cache', icon: '◉' },
+  { path: 'logging', label: 'Logging', icon: '▤' },
 ]
 
 export function Nav() {
   const pathname = usePathname()
+  
+  // 判断当前引擎
+  const currentEngine = pathname.startsWith('/fetch') ? 'fetch' : 'axios'
+  
   return (
     <header className="border-b border-gray-100 mb-10">
       <div className="flex items-center justify-between py-4">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <span className="text-lg font-semibold text-gray-900">@gvray/request</span>
           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">demo</span>
-        </div>
+        </Link>
       </div>
-      <nav className="flex gap-6 -mb-px">
-        {navItems.map(({ href, label, icon }) => (
+      
+      {/* 一级 Tab: 引擎切换 */}
+      <nav className="flex gap-6 -mb-px border-b border-gray-200">
+        {engineTabs.map(({ key, label, icon }) => (
           <Link
-            key={href}
-            href={href}
-            className={`pb-3 text-sm transition-colors border-b-2 ${
-              pathname === href
-                ? 'border-gray-900 text-gray-900 font-medium'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+            key={key}
+            href={`/${key}/overview`}
+            className={`flex items-center gap-2 px-3 py-2 border-b-2 text-sm font-medium transition-colors ${
+              currentEngine === key
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            <span className="mr-1.5 opacity-60">{icon}</span>
+            <span>{icon}</span>
             {label}
           </Link>
         ))}
+      </nav>
+      
+      {/* 二级 Tab: 功能切换 */}
+      <nav className="flex gap-6 -mb-px mt-2">
+        {featureTabs.map(({ path, label, icon }) => {
+          const href = `/${currentEngine}/${path}`
+          const isActive = pathname === href
+          
+          return (
+            <Link
+              key={path}
+              href={href}
+              className={`flex items-center gap-1 px-1 py-2 border-b-2 text-sm transition-colors ${
+                isActive
+                  ? 'border-gray-900 text-gray-900 font-medium'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span className="opacity-60">{icon}</span>
+              {label}
+            </Link>
+          )
+        })}
       </nav>
     </header>
   )

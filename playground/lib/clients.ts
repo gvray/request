@@ -145,13 +145,83 @@ export const loggingRequest = createRequest({
 // ============================================================
 // Fetch engine (demonstrates engine switching)
 // ============================================================
-export const fetchRequest = createRequest({
+
+// Basic fetch request (no interceptors)
+export const fetchBasicRequest = createRequest({
   engine: 'fetch',
   baseURL: '',
   timeout: 8000,
 });
 
-// Fetch engine with logging
+// Fetch with auth (Bearer Token + Auth Refresh)
+export const fetchAuthRequest = createRequest({
+  engine: 'fetch',
+  baseURL: '',
+  timeout: 8000,
+  preset: {
+    bearerAuth: {
+      getToken: () => getStorage('token'),
+      header: 'Authorization',
+      scheme: 'Bearer',
+      exclude: ['/api/login', '/api/refresh-token'],
+    },
+    responseAuthRefresh: {
+      refreshToken: async () => {
+        const res = await fetchBasicRequest('/api/refresh-token', { method: 'POST' });
+        return (res as { token?: string })?.token;
+      },
+      setToken: (token: string) => setStorage('token', token),
+      getToken: () => Promise.resolve(getStorage('token')),
+      statuses: [401],
+      loginRedirect: () => console.log('[Fetch Auth] Redirect to login'),
+    },
+  },
+});
+
+// Fetch with retry
+export const fetchRetryRequest = createRequest({
+  engine: 'fetch',
+  baseURL: '',
+  timeout: 15000,
+  preset: {
+    retry: {
+      maxRetries: 3,
+      retryDelay: 800,
+      exponentialBackoff: true,
+      retryCondition: (error: GvrayError) => {
+        const status = error.response?.status;
+        return status === 503 || (status !== undefined && status >= 500);
+      },
+      onRetry: (count: number, err: GvrayError) =>
+        console.log(`[Fetch Retry] Attempt ${count}:`, err.message),
+    },
+  },
+});
+
+// Fetch with timeout
+export const fetchTimeoutRequest = createRequest({
+  engine: 'fetch',
+  baseURL: '',
+  requestInterceptors: [
+    requestTimeout({ timeout: 2000, message: 'Fetch request timeout exceeded' }),
+  ],
+});
+
+// Fetch with cache
+const fetchCacheInterceptors = createCacheInterceptor({
+  ttl: 5000,
+  onCacheHit: (key: string) => console.log(`[Fetch Cache] HIT: ${key}`),
+  onCacheMiss: (key: string) => console.log(`[Fetch Cache] MISS: ${key}`),
+});
+export const fetchCacheRequest = createRequest({
+  engine: 'fetch',
+  baseURL: '',
+  timeout: 8000,
+  requestInterceptors: [fetchCacheInterceptors.request],
+  responseInterceptors: [fetchCacheInterceptors.response],
+});
+
+// Fetch with logging
 const fetchLoggingInterceptors = createLoggingInterceptor({
   logRequest: true,
   logResponse: true,
@@ -164,3 +234,6 @@ export const fetchLoggingRequest = createRequest({
   requestInterceptors: [fetchLoggingInterceptors.request],
   responseInterceptors: [fetchLoggingInterceptors.response],
 });
+
+// Re-export fetchBasicRequest as fetchRequest for backward compatibility
+export const fetchRequest = fetchBasicRequest;

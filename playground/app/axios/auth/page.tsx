@@ -38,6 +38,7 @@ export default function AuthPage() {
 
   return (
     <main>
+      <div className="max-w-6xl mx-auto px-6 py-8">
       <Nav />
       <PageHeader title="Authentication" desc="Using createRequest with preset.bearerAuth + preset.authRefresh" />
 
@@ -68,6 +69,7 @@ export default function AuthPage() {
       </div>
 
       <Output data={output} loading={loading} />
+          </div>
     </main>
   )
 }

@@ -89,18 +89,19 @@ async function mockRefreshToken(): Promise<string | null> {
 
 // 请求拦截器模式：前端主动判断 token 过期
 const requestAuthClient = createRequest({
+  engine: 'fetch',
   baseURL: '/api',
   preset: {
     requestAuthRefresh: {
       getToken: () => {
         const token = getToken()
-        console.log('[RequestAuth] getToken:', token)
+        console.log('[Fetch RequestAuth] getToken:', token)
         // 返回 null 表示 token 过期，触发刷新
         return token
       },
       refreshToken: mockRefreshToken,
       setToken: (token) => {
-        console.log('[RequestAuth] setToken:', token)
+        console.log('[Fetch RequestAuth] setToken:', token)
         setToken(token)
       },
       header: 'Authorization',
@@ -112,6 +113,7 @@ const requestAuthClient = createRequest({
 
 // 响应拦截器模式：后端返回 401 时刷新
 const responseAuthClient = createRequest({
+  engine: 'fetch',
   baseURL: '/api',
   preset: {
     bearerAuth: {
@@ -122,7 +124,7 @@ const responseAuthClient = createRequest({
     responseAuthRefresh: {
       refreshToken: mockRefreshToken,
       setToken: (token) => {
-        console.log('[ResponseAuth] setToken:', token)
+        console.log('[Fetch ResponseAuth] setToken:', token)
         setToken(token)
       },
       getToken: () => Promise.resolve(getToken()),
@@ -133,7 +135,7 @@ const responseAuthClient = createRequest({
   },
 })
 
-export default function AuthRefreshPage() {
+export default function FetchAuthRefreshPage() {
   const { output, loading, run } = useRunner()
   const [token, setTokenState] = useState<string | null>(() => getToken())
   const [refreshToken, setRefreshTokenState] = useState<string | null>(() => getRefreshToken())
@@ -198,6 +200,7 @@ export default function AuthRefreshPage() {
 
   return (
     <main>
+      <div className="max-w-6xl mx-auto px-6 py-8">
       <Nav />
       <PageHeader 
         title="Auth Refresh Testing" 
@@ -312,6 +315,7 @@ export default function AuthRefreshPage() {
       </div>
 
       <Output data={output} loading={loading} />
+          </div>
     </main>
   )
 }

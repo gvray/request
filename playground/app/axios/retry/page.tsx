@@ -7,6 +7,7 @@ export default function RetryPage() {
 
   return (
     <main>
+      <div className="max-w-6xl mx-auto px-6 py-8">
       <Nav />
       <PageHeader title="Auto Retry" desc="Using createRequest with retry interceptor (3 retries, 800ms delay)" />
 
@@ -32,6 +33,7 @@ export default function RetryPage() {
       <Output data={output} loading={loading} />
 
       <p className="mt-6 text-sm text-gray-500">Open browser console to see retry logs with timing.</p>
+          </div>
     </main>
   )
 }

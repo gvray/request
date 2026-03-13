@@ -7,6 +7,7 @@ export default function LoggingPage() {
 
   return (
     <main>
+      <div className="max-w-6xl mx-auto px-6 py-8">
       <Nav />
       <PageHeader title="Request Logging" desc="Using createRequest with logging interceptor" />
 
@@ -38,6 +39,7 @@ export default function LoggingPage() {
       <Output data={output} loading={loading} />
 
       <p className="mt-6 text-sm text-gray-500">Open browser console (F12) to see detailed logs.</p>
+          </div>
     </main>
   )
 }

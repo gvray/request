@@ -7,6 +7,7 @@ export default function CachePage() {
 
   return (
     <main>
+      <div className="max-w-6xl mx-auto px-6 py-8">
       <Nav />
       <PageHeader title="Response Cache" desc="Using createRequest with cache interceptor (TTL: 5 seconds)" />
 
@@ -32,6 +33,7 @@ export default function CachePage() {
       <p className="mt-6 text-sm text-gray-500">
         Click &ldquo;Cached&rdquo; twice within 5s to see the same timestamp. Check console for HIT/MISS logs.
       </p>
+          </div>
     </main>
   )
 }

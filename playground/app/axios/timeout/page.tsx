@@ -7,6 +7,7 @@ export default function TimeoutPage() {
 
   return (
     <main>
+      <div className="max-w-6xl mx-auto px-6 py-8">
       <Nav />
       <PageHeader title="Timeout" desc="Using createRequest with timeout interceptor (2000ms limit)" />
 
@@ -31,6 +32,7 @@ export default function TimeoutPage() {
       </div>
 
       <Output data={output} loading={loading} />
+          </div>
     </main>
   )
 }

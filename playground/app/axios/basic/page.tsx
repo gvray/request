@@ -7,6 +7,7 @@ export default function BasicPage() {
 
   return (
     <main>
+      <div className="max-w-6xl mx-auto px-6 py-8">
       <Nav />
       <PageHeader title="Basic Requests" desc="Using createRequest - independent instance without interceptors" />
 
@@ -31,6 +32,7 @@ export default function BasicPage() {
       </div>
 
       <Output data={output} loading={loading} />
+          </div>
     </main>
   )
 }
