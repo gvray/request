@@ -115,6 +115,9 @@ importers:
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
+      storetify:
+        specifier: ^1.2.1
+        version: 1.2.1
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -5992,6 +5995,12 @@ packages:
       }
     engines: { node: '>= 0.4' }
 
+  storetify@1.2.1:
+    resolution:
+      {
+        integrity: sha512-rCRAh7w+pIEC/grzAoLrjEHToEI+4HPmLfbpg/RHjb+7TNsRstY/aFqtxm49uvtJK0IkUn2+tzh/vHxNMmtsrw==,
+      }
+
   string-argv@0.3.2:
     resolution:
       {
@@ -10384,6 +10393,8 @@ snapshots:
     dependencies:
       es-errors: 1.3.0
       internal-slot: 1.1.0
+
+  storetify@1.2.1: {}
 
   string-argv@0.3.2: {}
 

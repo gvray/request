@@ -7,6 +7,7 @@ const navItems = [
   { href: '/', label: 'Overview', icon: '◈' },
   { href: '/basic', label: 'Basic', icon: '○' },
   { href: '/auth', label: 'Auth', icon: '◎' },
+  { href: '/auth-refresh', label: 'Auth Refresh', icon: '⟳' },
   { href: '/retry', label: 'Retry', icon: '↻' },
   { href: '/timeout', label: 'Timeout', icon: '◷' },
   { href: '/cache', label: 'Cache', icon: '◉' },
