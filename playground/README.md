@@ -1,84 +1,122 @@
-# 🎯 Gvray Request Playground
+# 🎯 @gvray/request Playground
 
-这是 `@gvray/request` 的完整示例应用，展示了所有拦截器功能和用法。
+Interactive demo application showcasing all features and interceptors of `@gvray/request` with dual-engine architecture.
 
-## 🚀 快速开始
+## ✨ Features
+
+### � Dual Engine Support
+
+Switch seamlessly between **Axios** and **Fetch** engines with the same API:
+
+- **Axios Engine** - Battle-tested HTTP client with extensive features
+- **Fetch Engine** - Native browser API with modern performance
+
+### 🎨 Interactive Demos
+
+Each feature includes live, interactive examples with real API calls:
+
+- **Overview** - Quick start with all interceptors
+- **Basic** - Simple HTTP operations (GET, POST, PUT, DELETE)
+- **Auth** - Bearer token authentication
+- **Auth Refresh** - Automatic token refresh on 401/403
+- **Retry** - Smart retry with exponential backoff
+- **Timeout** - Request timeout control
+- **Cache** - Response caching with TTL
+- **Logging** - Request/response logging
+
+## 🚀 Quick Start
 
 ```bash
-# 从根目录启动
+# From root directory
 pnpm play
 
-# 或直接在 playground 目录
+# Or from playground directory
 pnpm dev
 ```
 
-访问 [http://localhost:3000](http://localhost:3000) 查看所有演示页面。
+Visit [http://localhost:3000](http://localhost:3000) to explore the interactive demos.
 
-## 📋 功能演示
-
-### 🔐 认证拦截器
-
-- **Bearer Token 认证** (`/auth`) - 自动注入 Authorization 头
-- **自动 Token 刷新** (`/auth-refresh`) - 401 错误自动刷新 token
-
-### 🔄 重试拦截器
-
-- **智能重试** (`/retry`) - 网络错误和 5xx 自动重试
-- **指数退避** - 避免服务器过载
-
-### ⏱️ 超时拦截器
-
-- **请求超时** (`/timeout`) - 防止请求无限等待
-
-### 💾 缓存拦截器
-
-- **响应缓存** (`/cache`) - TTL 缓存提升性能
-
-### 📝 日志拦截器
-
-- **请求日志** (`/logging`) - 完整的请求/响应日志
-
-### 🔧 基础功能
-
-- **基础请求** (`/basic`) - 简单的 GET/POST 演示
-- **Fetch 引擎** (`/fetch`) - 展示引擎切换
-
-## 🛠 技术栈
-
-- **Next.js 16** - React 全栈框架
-- **React 19** - 最新 React 版本
-- **TypeScript** - 类型安全
-- **Tailwind CSS** - 原子化 CSS
-- **@gvray/request** - 本项目的 HTTP 客户端
-
-## 📁 项目结构
+## � Project Structure
 
 ```
 playground/
-├── app/                 # Next.js App Router 页面
-│   ├── api/            # 模拟 API 路由
-│   ├── auth/           # 认证演示
-│   ├── auth-refresh/   # Token 刷新演示
-│   ├── retry/          # 重试演示
-│   ├── timeout/        # 超时演示
-│   ├── cache/          # 缓存演示
-│   ├── logging/        # 日志演示
-│   └── basic/          # 基础演示
+├── app/
+│   ├── page.tsx              # Landing page with engine selection
+│   ├── axios/                # Axios engine demos
+│   │   ├── overview/         # Overview page
+│   │   ├── basic/            # Basic requests
+│   │   ├── auth/             # Authentication
+│   │   ├── auth-refresh/     # Token refresh
+│   │   ├── retry/            # Retry logic
+│   │   ├── timeout/          # Timeout control
+│   │   ├── cache/            # Response caching
+│   │   └── logging/          # Request logging
+│   ├── fetch/                # Fetch engine demos (same structure)
+│   └── api/                  # Mock API routes
 ├── lib/
-│   └── clients.ts      # 各种请求实例配置
+│   └── clients.ts            # Pre-configured request instances
 └── components/
-    └── ui.tsx         # 共享 UI 组件
+    └── ui.tsx                # Shared UI components
 ```
 
-## 💡 使用说明
+## 🎯 Navigation
 
-1. **全局模式** - 使用 `createClient` + `request`
-2. **独立模式** - 使用 `createRequest` 创建独立实例
-3. **拦截器组合** - 查看各种拦截器的组合使用
-4. **错误处理** - 演示统一的错误处理机制
+The playground uses a two-level tab navigation:
 
-## 🔗 相关链接
+1. **Engine Level** - Switch between Axios and Fetch engines
+2. **Feature Level** - Navigate between different interceptor demos
 
-- [@gvray/request 文档](../../README.md)
-- [Next.js 文档](https://nextjs.org/docs)
-- [React 文档](https://react.dev)
+Click the `@gvray/request` logo to return to the landing page.
+
+## 🛠 Tech Stack
+
+- **Next.js 16** - React framework with App Router
+- **React 19** - Latest React with Server Components
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **@gvray/request** - Universal HTTP client
+
+## � Key Concepts
+
+### Engine Switching
+
+```typescript
+// Axios engine (default)
+const axiosClient = createRequest({
+  engine: 'axios',
+  baseURL: '/api',
+});
+
+// Fetch engine
+const fetchClient = createRequest({
+  engine: 'fetch',
+  baseURL: '/api',
+});
+```
+
+### Interceptor Presets
+
+All interceptors work identically across both engines:
+
+```typescript
+const client = createRequest({
+  engine: 'axios', // or 'fetch'
+  preset: {
+    bearerAuth: { getToken: () => token },
+    responseAuthRefresh: { refreshToken, setToken },
+    retry: { maxRetries: 3 },
+  },
+});
+```
+
+## 🔗 Links
+
+- [Main Documentation](../../README.md)
+- [API Reference](../../docs/api.md)
+- [Next.js Docs](https://nextjs.org/docs)
+
+## 📝 Notes
+
+- All API routes are mocked for demonstration purposes
+- Token storage uses `localStorage` (client-side only)
+- Check browser console for detailed interceptor logs
