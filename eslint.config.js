@@ -10,5 +10,5 @@ export default defineConfig([
       // You can add project-specific rules here.
     }
   },
-  globalIgnores(["examples/**"]),
+  globalIgnores(["examples/**", "playground/**"]),
 ])

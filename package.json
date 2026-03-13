@@ -37,8 +37,7 @@
     "demo": "tsx example/node/example.ts",
     "build": "swiftlet build",
     "dev": "swiftlet dev",
-    "playground": "pnpm -C examples/request-app dev",
-    "playground:vanilla": "concurrently \"pnpm -C examples/backend dev\" \"pnpm -C examples/frontend dev\"",
+    "play": "pnpm -C playground dev",
     "prepublish": "pnpm build"
   },
   "keywords": [
