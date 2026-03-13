@@ -36,6 +36,10 @@ function defaultRetryCondition(error: GvrayError, retryableStatuses: number[]): 
     return true;
   }
   const status = error.response?.status;
+  // 排除 401/403 认证错误，这些应该由 authRefresh 拦截器处理
+  if (status === 401 || status === 403) {
+    return false;
+  }
   return status ? retryableStatuses.includes(status) : false;
 }
 
@@ -96,16 +100,9 @@ function createRetryInterceptorImpl(
     const error = err as GvrayError;
     const config = (error.config || {}) as GvrayOptions & {
       _retryCount?: number;
-      _retry?: boolean;
     };
 
     if (!error.config) {
-      return Promise.reject(error);
-    }
-
-    // 如果请求已经被 authRefresh 拦截器处理过，不再重试
-    // 避免与 authRefresh 拦截器冲突
-    if (config._retry) {
       return Promise.reject(error);
     }
 

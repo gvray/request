@@ -89,6 +89,8 @@ class GvrayRequest {
     if (preset?.requestAuthRefresh) {
       builtinRequestInterceptors.push(requestAuthRefresh(preset.requestAuthRefresh));
     }
+    // 注意：响应拦截器执行顺序是 FIFO（先注册先执行）
+    // 所以 authRefresh 要先注册，这样它会先处理 401/403
     if (preset?.responseAuthRefresh) {
       builtinResponseInterceptors.push(
         createResponseAuthRefresh(preset.responseAuthRefresh, this.requestInstance!)

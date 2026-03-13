@@ -250,7 +250,7 @@ describe('createResponseAuthRefresh', () => {
 
     const mockError = {
       response: { status: 401 },
-      config: { _retry: true },
+      config: { _authRefreshRetry: true },
     };
 
     await expect(onError(mockError as any)).rejects.toBe(mockError);
@@ -439,7 +439,7 @@ describe('createResponseAuthRefresh', () => {
       // Request that was already retried
       const error = {
         response: { status: 401 },
-        config: { url: '/api/1', _retry: true },
+        config: { url: '/api/1', _authRefreshRetry: true },
       };
 
       await expect(onError(error as any)).rejects.toBe(error);

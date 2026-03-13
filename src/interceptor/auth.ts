@@ -181,7 +181,7 @@ type RefreshState = 'idle' | 'refreshing' | 'failed';
 
 // 等待队列中的请求项
 interface PendingRequest {
-  config: GvrayOptions & { _retry?: boolean };
+  config: GvrayOptions & { _authRefreshRetry?: boolean };
   error: GvrayError;
   resolve: (value: GvrayResponse | PromiseLike<GvrayResponse>) => void;
   reject: (reason: GvrayError) => void;
@@ -340,7 +340,7 @@ function createInterceptorImpl(
   const onError: GvrayErrorInterceptor = (err: any) => {
     const error = err as GvrayError;
     const status = error.response?.status;
-    const originalConfig = (error.config || {}) as GvrayOptions & { _retry?: boolean };
+    const originalConfig = (error.config || {}) as GvrayOptions & { _authRefreshRetry?: boolean };
 
     // 非目标状态码，直接拒绝
     if (!status || !statuses.includes(status)) {
@@ -348,13 +348,13 @@ function createInterceptorImpl(
     }
 
     // 已经是重试过的请求，说明新 token 也失效了，放弃重试
-    if (originalConfig._retry) {
+    if (originalConfig._authRefreshRetry) {
       safeLoginRedirect();
       return Promise.reject(error) as Promise<GvrayError>;
     }
 
     // 标记此请求已经尝试过刷新
-    originalConfig._retry = true;
+    originalConfig._authRefreshRetry = true;
 
     // 如果刷新已经失败，直接拒绝（防止在失败状态下继续堆积请求）
     if (refreshState === 'failed') {
